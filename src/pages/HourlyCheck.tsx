@@ -34,7 +34,6 @@ const allHistory = [
 
 export default function HourlyCheck() {
   const navigate = useNavigate();
-
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("");
   const [setCurrentShift] = useState<any | null>(null);
