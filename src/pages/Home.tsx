@@ -38,7 +38,7 @@ export default function Home() {
               </button>
 
               {showLoginMenu && (
-                <div className="absolute right-0 top-full mt-4 w-[520px] rounded-[24px] border border-sky-400/20 bg-[#0d1117] p-5 shadow-2xl shadow-sky-500/20 overflow-hidden z-[999] backdrop-blur-xl">
+                <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-[90px] sm:top-full sm:mt-4 sm:w-[520px] max-h-[80vh] overflow-y-auto rounded-[20px] sm:rounded-[24px] border border-sky-400/20 bg-[#0d1117] p-4 sm:p-5 shadow-2xl shadow-sky-500/20 z-[999] backdrop-blur-xl">
                   <h3 className="text-sky-300 text-sm font-semibold tracking-[0.2em] uppercase mb-6 border-b border-white/10 pb-4">
                     Sign In
                   </h3>
@@ -46,13 +46,13 @@ export default function Home() {
                   <div className="space-y-5">
                     <button
                       onClick={() => setSelectedLogin("staff")}
-                      className={`w-full rounded-[20px] border bg-[#111827] p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "staff"
                           ? "border-sky-400/40"
                           : "border-white/10"
                       }`}
                     >
-                      <div className="flex items-start gap-5">
+                      <div className="flex items-start gap-3 sm:gap-5">
                         <div
                           className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
                             selectedLogin === "staff"
@@ -62,11 +62,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
                             Staff Login
                           </h4>
 
-                          <p className="text-gray-400 text-base leading-6">
+                          <p className="text-gray-400 text-sm sm:text-base leading-6">
                             Access hourly check-ins, documentation, shift
                             handovers and daily care workflows.
                           </p>
@@ -76,13 +76,13 @@ export default function Home() {
 
                     <button
                       onClick={() => setSelectedLogin("admin")}
-                      className={`w-full rounded-[20px] border bg-[#111827] p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "admin"
                           ? "border-emerald-300/40"
                           : "border-white/10"
                       }`}
                     >
-                      <div className="flex items-start gap-5">
+                      <div className="flex items-start gap-3 sm:gap-5">
                         <div
                           className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
                             selectedLogin === "admin"
@@ -92,11 +92,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
                             Admin Login
                           </h4>
 
-                          <p className="text-gray-400 text-base leading-6">
+                          <p className="text-gray-400 text-sm sm:text-base leading-6">
                             Manage employees, clients, compliance tracking and
                             organisation settings.
                           </p>
@@ -106,13 +106,13 @@ export default function Home() {
 
                     <button
                       onClick={() => setSelectedLogin("patient")}
-                      className={`w-full rounded-[20px] border bg-[#111827] p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "patient"
                           ? "border-sky-400/40"
                           : "border-white/10"
                       }`}
                     >
-                      <div className="flex items-start gap-5">
+                      <div className="flex items-start gap-3 sm:gap-5">
                         <div
                           className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
                             selectedLogin === "patient"
@@ -122,11 +122,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
                             Patient Login
                           </h4>
 
-                          <p className="text-gray-400 text-base leading-6">
+                          <p className="text-gray-400 text-sm sm:text-base leading-6">
                             View care updates, wellbeing records and
                             communication securely.
                           </p>
@@ -137,7 +137,7 @@ export default function Home() {
 
                   <button
                     onClick={() => navigate("/login")}
-                    className="mt-6 w-full rounded-2xl bg-gradient-to-r from-sky-400 to-emerald-300 py-3 text-lg font-bold text-black shadow-lg shadow-sky-500/20 hover:scale-[1.01] transition-all duration-300"
+                    className="mt-6 w-full rounded-xl sm:rounded-2xl bg-gradient-to-r from-sky-400 to-emerald-300 py-3 text-base sm:text-lg font-bold text-black shadow-lg shadow-sky-500/20 hover:scale-[1.01] transition-all duration-300"
                   >
                     Sign In
                   </button>
