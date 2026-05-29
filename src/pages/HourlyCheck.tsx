@@ -2,14 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
-import {
-  Clock3,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Play,
-  X,
-} from "lucide-react";
+import { Clock3, CheckCircle2, AlertTriangle, XCircle, X } from "lucide-react";
 import StaffSidebar from "../components/StaffSidebar";
 
 const allHistory = [
@@ -44,7 +37,7 @@ export default function HourlyCheck() {
 
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("");
-  const [currentShift, setCurrentShift] = useState<any | null>(null);
+  const [setCurrentShift] = useState<any | null>(null);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
 
   const [selectedCheckin, setSelectedCheckin] = useState<any | null>(null);
