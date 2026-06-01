@@ -5,39 +5,49 @@ import Navbar from "../components/Navbar";
 import { Clock3, CheckCircle2, AlertTriangle, XCircle, X } from "lucide-react";
 import StaffSidebar from "../components/StaffSidebar";
 
-const allHistory = [
-  {
-    date: "26 May 2026",
-    checks: 8,
-    completed: 7,
-    missed: 1,
-  },
-  {
-    date: "25 May 2026",
-    checks: 8,
-    completed: 8,
-    missed: 0,
-  },
-  {
-    date: "24 May 2026",
-    checks: 8,
-    completed: 6,
-    missed: 2,
-  },
-  {
-    date: "23 May 2026",
-    checks: 8,
-    completed: 8,
-    missed: 0,
-  },
-];
-
 export default function HourlyCheck() {
   const navigate = useNavigate();
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("");
-  const [setCurrentShift] = useState<any | null>(null);
+  const [, setCurrentShift] = useState<any | null>(null);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
+
+  const historyData = Object.values(
+    todayChecks.reduce((acc: any, check: any) => {
+      const dateKey = new Date(check.scheduled_time).toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        },
+      );
+
+      if (!acc[dateKey]) {
+        acc[dateKey] = {
+          date: dateKey,
+          checks: 0,
+          completed: 0,
+          missed: 0,
+        };
+      }
+
+      acc[dateKey].checks += 1;
+
+      if (
+        check.status === "Completed on time" ||
+        check.status === "Late entry"
+      ) {
+        acc[dateKey].completed += 1;
+      }
+
+      if (check.status === "Missed entry") {
+        acc[dateKey].missed += 1;
+      }
+
+      return acc;
+    }, {}),
+  ) as any[];
 
   const [selectedCheckin, setSelectedCheckin] = useState<any | null>(null);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
@@ -78,13 +88,17 @@ export default function HourlyCheck() {
         .eq("id", session.user.id)
         .single();
 
-      if (error || !profile) {
-        navigate("/login");
-        return;
-      }
+      console.log("SESSION", session);
+      console.log("PROFILE", profile);
+      console.log("PROFILE ERROR", error);
 
-      setStaffName(profile.full_name || "Staff");
-      setStaffRole(profile.role || "staff");
+      if (profile) {
+        setStaffName(profile.full_name || "Staff");
+        setStaffRole(profile.role || "staff");
+      } else {
+        setStaffName("Staff");
+        setStaffRole("staff");
+      }
       const { data: shiftsData } = await supabase
         .from("shifts")
         .select("*")
@@ -95,48 +109,44 @@ export default function HourlyCheck() {
       if (shiftsData && shiftsData.length > 0) {
         setCurrentShift(shiftsData[0]);
 
-        const shiftIds = shiftsData.map((shift) => shift.id);
-
         let { data: checkinsData } = await supabase
           .from("checkins")
           .select("*")
-          .in("shift_id", shiftIds)
+          .eq("staff_id", session.user.id)
           .order("scheduled_time", { ascending: false });
 
         if (!checkinsData || checkinsData.length === 0) {
-          const shiftData = shiftsData[0];
-
-          const start = new Date(
-            `${shiftData.shift_date}T${shiftData.start_time}`,
-          );
-
-          const end = new Date(`${shiftData.shift_date}T${shiftData.end_time}`);
-
           const generatedCheckins = [];
 
-          const current = new Date(start);
+          for (const shiftData of shiftsData) {
+            const start = new Date(
+              `${shiftData.shift_date}T${shiftData.start_time}`,
+            );
 
-          while (current <= end) {
-            generatedCheckins.push({
-              shift_id: shiftData.id,
+            const end = new Date(
+              `${shiftData.shift_date}T${shiftData.end_time}`,
+            );
 
-              patient_id: shiftData.patient_id,
-              patient_name: shiftData.patient_name,
+            const current = new Date(start);
 
-              staff_id: shiftData.staff_id,
-              staff_name: shiftData.staff_name,
+            while (current <= end) {
+              generatedCheckins.push({
+                shift_id: shiftData.id,
+                patient_id: shiftData.patient_id,
+                patient_name: shiftData.patient_name,
+                staff_id: shiftData.staff_id,
+                staff_name: shiftData.staff_name,
+                scheduled_time: `${shiftData.shift_date}T${String(
+                  current.getHours(),
+                ).padStart(2, "0")}:${String(current.getMinutes()).padStart(
+                  2,
+                  "0",
+                )}:00`,
+                status: "upcoming",
+              });
 
-              scheduled_time: `${shiftData.shift_date}T${String(
-                current.getHours(),
-              ).padStart(2, "0")}:${String(current.getMinutes()).padStart(
-                2,
-                "0",
-              )}:00`,
-
-              status: "upcoming",
-            });
-
-            current.setHours(current.getHours() + 1);
+              current.setHours(current.getHours() + 1);
+            }
           }
 
           const { data: insertedCheckins } = await supabase
@@ -235,12 +245,17 @@ export default function HourlyCheck() {
             };
           });
 
-          setTodayChecks(formattedChecks);
+          setTodayChecks(
+            formattedChecks.sort(
+              (a, b) =>
+                new Date(b.scheduled_time).getTime() -
+                new Date(a.scheduled_time).getTime(),
+            ),
+          );
         }
       }
     } catch (err) {
-      console.error(err);
-      navigate("/login");
+      console.error("HourlyCheck Error:", err);
     }
   }
   function toggleValue(
@@ -473,7 +488,7 @@ export default function HourlyCheck() {
               </div>
 
               <div className="space-y-3">
-                {allHistory.map((item, index) => (
+                {historyData.map((item: any, index) => (
                   <div
                     key={index}
                     className="rounded-[18px] border border-white/[0.05] bg-[#0b1018] p-4"
@@ -489,9 +504,11 @@ export default function HourlyCheck() {
                         </p>
                       </div>
 
-                      <button className="h-[38px] px-4 rounded-[12px] border border-[#1d3248] bg-[#0d1723] text-[#79c0ff] text-[13px] font-medium hover:bg-[#122131] transition-all duration-300">
-                        View Details
-                      </button>
+                      <div className="text-right">
+                        <p className="text-[#79c0ff] text-[13px] font-medium">
+                          {item.completed}/{item.checks} Completed
+                        </p>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

@@ -12,6 +12,50 @@ export default function StaffDashboard() {
   const [staffRole, setStaffRole] = useState("");
   const [shifts, setShifts] = useState<any[]>([]);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
+  const currentUkDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+  }).format(new Date());
+
+  const currentUkTime = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "Europe/London",
+    }),
+  )
+    .toTimeString()
+    .slice(0, 5);
+
+  const activeShiftPatient = shifts.find((shift) => {
+    const shiftStart = shift.start_time.slice(0, 5);
+    const shiftEnd = shift.end_time.slice(0, 5);
+
+    return (
+      shift.shift_date === currentUkDate &&
+      currentUkTime >= shiftStart &&
+      currentUkTime <= shiftEnd
+    );
+  });
+
+  const nextShiftPatient = shifts.find((shift) => {
+    if (shift.shift_date > currentUkDate) return true;
+
+    return (
+      shift.shift_date === currentUkDate &&
+      shift.start_time.slice(0, 5) > currentUkTime
+    );
+  });
+
+  const assignedPatient = activeShiftPatient || nextShiftPatient || shifts[0];
+  const onTimeCount = todayChecks.filter(
+    (c) => c.status === "Completed on time",
+  ).length;
+
+  const lateCount = todayChecks.filter((c) => c.status === "Late entry").length;
+
+  const missedCount = todayChecks.filter(
+    (c) => c.status === "Missed entry",
+  ).length;
+
+  const totalCount = todayChecks.length;
   const [nextCheckin, setNextCheckin] = useState<any>(null);
   const [nextCountdown, setNextCountdown] = useState("--");
   const [nextProgress, setNextProgress] = useState(0);
@@ -34,6 +78,33 @@ export default function StaffDashboard() {
 
   const [engagement, setEngagement] = useState<string[]>([]);
   const [engagementNotes, setEngagementNotes] = useState("");
+
+  const [mobility, setMobility] = useState<string[]>([]);
+  const [mobilityNotes, setMobilityNotes] = useState("");
+
+  const [medication, setMedication] = useState<string[]>([]);
+  const [medicationNotes, setMedicationNotes] = useState("");
+
+  const [privacyReview, setPrivacyReview] = useState<string[]>([]);
+  const [privacyReviewNotes, setPrivacyReviewNotes] = useState("");
+
+  const [personalSupport, setPersonalSupport] = useState<string[]>([]);
+  const [personalSupportNotes, setPersonalSupportNotes] = useState("");
+
+  const [safeguarding, setSafeguarding] = useState<string[]>([]);
+  const [safeguardingNotes, setSafeguardingNotes] = useState("");
+  const [showAllShifts, setShowAllShifts] = useState(false);
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<any>(null);
+
+  const [wellbeingSummary, setWellbeingSummary] = useState("");
+  const [careSummary, setCareSummary] = useState("");
+  const [concernsIncidents, setConcernsIncidents] = useState("");
+  const [escalations, setEscalations] = useState("");
+  const [familyCommunication, setFamilyCommunication] = useState("");
+  const [baselineChanges, setBaselineChanges] = useState("");
+  const [recommendations, setRecommendations] = useState("");
+  const [detailedNotes, setDetailedNotes] = useState("");
 
   // UK/UTC helpers
   const UK_OFFSET_HOURS = 1;
@@ -79,6 +150,61 @@ export default function StaffDashboard() {
       );
 
       if (!next) {
+        const ukNow = new Date(
+          new Date().toLocaleString("en-US", {
+            timeZone: "Europe/London",
+          }),
+        );
+
+        const currentUkDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Europe/London",
+        }).format(new Date());
+
+        const currentUkTime = ukNow.toTimeString().slice(0, 5);
+
+        const activeShift = shifts.find((shift) => {
+          const shiftStart = shift.start_time.slice(0, 5);
+          const shiftEnd = shift.end_time.slice(0, 5);
+
+          return (
+            shift.shift_date === currentUkDate &&
+            currentUkTime >= shiftStart &&
+            currentUkTime <= shiftEnd
+          );
+        });
+
+        if (activeShift) {
+          setNextCheckin({
+            time: activeShift.end_time.slice(0, 5),
+            isHandover: true,
+          });
+
+          const handoverTime = ukToUTC(
+            activeShift.shift_date,
+            activeShift.end_time.slice(0, 5),
+          );
+
+          const diff = handoverTime.getTime() - new Date().getTime();
+
+          if (diff <= 0) {
+            setNextCountdown("Handover Required");
+            setNextProgress(100);
+          } else {
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            setNextCountdown(`${hours}h ${minutes}m ${seconds}s`);
+
+            const oneHour = 60 * 60 * 1000;
+            setNextProgress(
+              Math.min(100, Math.max(0, ((oneHour - diff) / oneHour) * 100)),
+            );
+          }
+
+          return;
+        }
+
         setNextCheckin(null);
         setNextCountdown("No upcoming check-ins");
         setNextProgress(0);
@@ -130,7 +256,7 @@ export default function StaffDashboard() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [todayChecks, notifiedCheckin]);
+  }, [todayChecks, notifiedCheckin, shifts]);
 
   const checkStaffAccess = async () => {
     try {
@@ -165,11 +291,47 @@ export default function StaffDashboard() {
         .eq("staff_id", session.user.id)
         .order("shift_date", { ascending: true });
 
+      if (shiftData) {
+        const ukNow = new Date(
+          new Date().toLocaleString("en-US", {
+            timeZone: "Europe/London",
+          }),
+        );
+
+        const currentDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Europe/London",
+        }).format(new Date());
+
+        const currentTime = ukNow.toTimeString().slice(0, 5);
+
+        for (const shift of shiftData) {
+          const shiftFinished =
+            shift.shift_date < currentDate ||
+            (shift.shift_date === currentDate &&
+              currentTime > shift.end_time.slice(0, 5));
+
+          if (shiftFinished && shift.status !== "done") {
+            await supabase
+              .from("shifts")
+              .update({ status: "done" })
+              .eq("id", shift.id);
+
+            shift.status = "done";
+          }
+        }
+      }
+
       console.log("Fetched shifts:", shiftData);
       console.log("Shift fetch error:", shiftError);
 
       if (!shiftError && shiftData) {
-        setShifts(shiftData);
+        const sortedShifts = [...shiftData].sort((a, b) => {
+          const aDateTime = `${a.shift_date} ${a.start_time}`;
+          const bDateTime = `${b.shift_date} ${b.start_time}`;
+          return bDateTime.localeCompare(aDateTime);
+        });
+
+        setShifts(sortedShifts);
       }
 
       if (!shiftError && shiftData) {
@@ -228,7 +390,7 @@ export default function StaffDashboard() {
             // FIRST: check if check-in already exists in Supabase
             const existingCheck = await supabase
               .from("checkins")
-              .select("*")
+              .select("id,status,submitted_at")
               .eq("shift_id", shift.id)
               .eq("scheduled_time", checkTime.toISOString())
               .order("submitted_at", { ascending: false })
@@ -289,6 +451,21 @@ export default function StaffDashboard() {
                 color = "red";
                 action = "Missed";
                 note = "Check-in window expired";
+
+                await supabase.from("checkins").upsert(
+                  {
+                    shift_id: shift.id,
+                    patient_id: shift.patient_id,
+                    patient_name: shift.patient_name,
+                    staff_id: shift.staff_id,
+                    staff_name: shift.staff_name,
+                    scheduled_time: checkTime.toISOString(),
+                    status: "missed",
+                  },
+                  {
+                    onConflict: "shift_id,scheduled_time",
+                  },
+                );
               }
             }
 
@@ -302,6 +479,9 @@ export default function StaffDashboard() {
               shiftId: shift.id,
               checkTime: formattedHour,
               shiftDate: shift.shift_date,
+              isFourHourly:
+                generatedChecks.length > 0 &&
+                (generatedChecks.length + 1) % 4 === 0,
             });
             currentCheckTime.setHours(currentCheckTime.getHours() + 1);
           }
@@ -329,6 +509,36 @@ export default function StaffDashboard() {
 
   const submitCheckin = async () => {
     if (!selectedCheckin) return;
+
+    const missingStandardSection =
+      wellbeing.length === 0 ||
+      mood.length === 0 ||
+      hydration.length === 0 ||
+      safety.length === 0 ||
+      engagement.length === 0;
+
+    if (missingStandardSection) {
+      alert(
+        "All sections must have at least one checkbox selected. Notes are optional.",
+      );
+      return;
+    }
+
+    if (selectedCheckin?.isFourHourly) {
+      const missingFourHourlySection =
+        mobility.length === 0 ||
+        medication.length === 0 ||
+        privacyReview.length === 0 ||
+        personalSupport.length === 0 ||
+        safeguarding.length === 0;
+
+      if (missingFourHourlySection) {
+        alert(
+          "All 4-hourly review sections must have at least one checkbox selected. Notes are optional.",
+        );
+        return;
+      }
+    }
 
     try {
       const {
@@ -390,6 +600,21 @@ export default function StaffDashboard() {
 
           engagement,
           engagement_notes: engagementNotes,
+
+          mobility,
+          mobility_notes: mobilityNotes,
+
+          medication,
+          medication_notes: medicationNotes,
+
+          privacy: privacyReview,
+          privacy_notes: privacyReviewNotes,
+
+          support: personalSupport,
+          support_notes: personalSupportNotes,
+
+          safeguarding,
+          safeguarding_notes: safeguardingNotes,
         });
 
       if (checkinInsertError) {
@@ -449,9 +674,71 @@ export default function StaffDashboard() {
       setSafetyNotes("");
       setEngagement([]);
       setEngagementNotes("");
+      setMobility([]);
+      setMobilityNotes("");
+
+      setMedication([]);
+      setMedicationNotes("");
+
+      setPrivacyReview([]);
+      setPrivacyReviewNotes("");
+
+      setPersonalSupport([]);
+      setPersonalSupportNotes("");
+
+      setSafeguarding([]);
+      setSafeguardingNotes("");
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const submitHandover = async () => {
+    if (!selectedShift) return;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) return;
+
+    const { error } = await supabase.from("handovers").insert({
+      shift_id: selectedShift.id,
+      wellbeing_summary: wellbeingSummary,
+      care_summary: careSummary,
+      concerns_incidents: concernsIncidents,
+      escalations,
+      family_communication: familyCommunication,
+      baseline_changes: baselineChanges,
+      recommendations,
+      detailed_notes: detailedNotes,
+      submitted_by: session.user.id,
+    });
+
+    if (error) {
+      console.error(error);
+      alert("Failed to save handover");
+      return;
+    }
+
+    await supabase
+      .from("shifts")
+      .update({ handover_completed: true })
+      .eq("id", selectedShift.id);
+
+    setShowHandoverModal(false);
+    setSelectedShift(null);
+
+    setWellbeingSummary("");
+    setCareSummary("");
+    setConcernsIncidents("");
+    setEscalations("");
+    setFamilyCommunication("");
+    setBaselineChanges("");
+    setRecommendations("");
+    setDetailedNotes("");
+
+    await checkStaffAccess();
   };
 
   const handleLogout = async () => {
@@ -491,11 +778,11 @@ export default function StaffDashboard() {
                   </p>
 
                   <h2 className="text-[24px] font-semibold text-white leading-tight mb-2">
-                    {shifts[0]?.patient_name || "No Patient Assigned"}
+                    {assignedPatient?.patient_name || "No Patient Assigned"}
                   </h2>
 
                   <p className="text-[#9ca8b5] text-[13px]">
-                    {shifts[0]?.patient_role || "Care Patient"}
+                    {assignedPatient?.patient_role || "Care Patient"}
                   </p>
                 </div>
               </div>
@@ -599,12 +886,21 @@ export default function StaffDashboard() {
                 </h2>
 
                 <p className="text-[#94a3b8] text-[14px]">
-                  All shifts allocated by admin
+                  Current/latest shift shown. Expand to view all shifts.
                 </p>
               </div>
 
-              <div className="w-[54px] h-[54px] rounded-[16px] border border-[#1f3b56] bg-[#0c1825] flex items-center justify-center text-[#79bbff] text-[24px]">
-                📅
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowAllShifts(!showAllShifts)}
+                  className="h-[42px] px-4 rounded-[12px] border border-[#1f3b56] bg-[#0c1825] text-[#79bbff] text-[13px] font-medium"
+                >
+                  {showAllShifts ? "Hide Shifts" : "View All Shifts"}
+                </button>
+
+                <div className="w-[54px] h-[54px] rounded-[16px] border border-[#1f3b56] bg-[#0c1825] flex items-center justify-center text-[#79bbff] text-[24px]">
+                  📅
+                </div>
               </div>
             </div>
 
@@ -614,7 +910,7 @@ export default function StaffDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {shifts.map((shift) => (
+                {(showAllShifts ? shifts : shifts.slice(0, 1)).map((shift) => (
                   <div
                     key={shift.id}
                     className="rounded-[18px] border border-white/[0.06] bg-[#0b1018] p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
@@ -678,6 +974,19 @@ export default function StaffDashboard() {
                               .toTimeString()
                               .slice(0, 5);
 
+                            if (
+                              shift.status === "done" &&
+                              !shift.handover_completed
+                            ) {
+                              return "Handover Required";
+                            }
+
+                            if (
+                              shift.status === "done" &&
+                              shift.handover_completed
+                            ) {
+                              return "Completed";
+                            }
                             const shiftStart = shift.start_time.slice(0, 5);
                             const shiftEnd = shift.end_time.slice(0, 5);
 
@@ -704,6 +1013,19 @@ export default function StaffDashboard() {
                           })()}
                         </h4>
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {shift.status === "done" && !shift.handover_completed && (
+                        <button
+                          onClick={() => {
+                            setSelectedShift(shift);
+                            setShowHandoverModal(true);
+                          }}
+                          className="h-[42px] px-4 rounded-[12px] bg-[#ffd15c] text-black font-medium"
+                        >
+                          Start Handover
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -817,11 +1139,15 @@ export default function StaffDashboard() {
                   </div>
                   <div>
                     <h2 className="text-[42px] font-semibold text-white leading-none mb-2">
-                      {nextCheckin?.time || "--:--"}
+                      {nextCheckin?.isHandover
+                        ? "Handover"
+                        : nextCheckin?.time || "--:--"}
                     </h2>
                     <p className="text-[#b5c0cb] text-[14px]">
                       {nextCheckin
-                        ? `Available from ${nextCheckin.time}`
+                        ? nextCheckin.isHandover
+                          ? `Handover begins at ${nextCheckin.time}`
+                          : `Available from ${nextCheckin.time}`
                         : "No upcoming check-ins"}
                     </p>
                   </div>
@@ -847,10 +1173,10 @@ export default function StaffDashboard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    ["On Time", "3", "#8eff4d"],
-                    ["Late", "1", "#ffc83d"],
-                    ["Missed", "1", "#ff5757"],
-                    ["Total", "5", "#5db5ff"],
+                    ["On Time", String(onTimeCount), "#8eff4d"],
+                    ["Late", String(lateCount), "#ffc83d"],
+                    ["Missed", String(missedCount), "#ff5757"],
+                    ["Total", String(totalCount), "#5db5ff"],
                   ].map((item, index) => (
                     <div
                       key={index}
@@ -874,6 +1200,72 @@ export default function StaffDashboard() {
           </div>
         </main>
       </div>
+
+      {/* HANDOVER MODAL */}
+      {showHandoverModal && (
+        <div className="fixed inset-0 z-[2147483647] bg-black/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl bg-[#060b12] rounded-[24px] p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-white text-[28px] font-semibold mb-6">
+              End of Shift Handover
+            </h2>
+
+            {[
+              [
+                "Overall presentation and wellbeing summary",
+                wellbeingSummary,
+                setWellbeingSummary,
+              ],
+              ["Summary of care/support provided", careSummary, setCareSummary],
+              [
+                "Any concerns or incidents",
+                concernsIncidents,
+                setConcernsIncidents,
+              ],
+              ["Escalations made", escalations, setEscalations],
+              [
+                "Family communication",
+                familyCommunication,
+                setFamilyCommunication,
+              ],
+              [
+                "Changes from normal baseline",
+                baselineChanges,
+                setBaselineChanges,
+              ],
+              [
+                "Recommendations for next staff member",
+                recommendations,
+                setRecommendations,
+              ],
+              ["Detailed handover notes", detailedNotes, setDetailedNotes],
+            ].map(([label, value, setter]: any) => (
+              <div key={label} className="mb-4">
+                <label className="block text-white mb-2">{label}</label>
+                <textarea
+                  value={value}
+                  onChange={(e) => setter(e.target.value)}
+                  className="w-full h-[100px] rounded-[12px] bg-[#0d1722] border border-[#1d3248] p-3 text-white"
+                />
+              </div>
+            ))}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowHandoverModal(false)}
+                className="px-5 h-[48px] border border-[#1d3248] rounded-[12px] text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitHandover}
+                className="px-5 h-[48px] rounded-[12px] bg-[#ffd15c] text-black font-semibold"
+              >
+                Submit Handover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CHECKIN MODAL */}
       {showCheckinModal && (
@@ -933,9 +1325,12 @@ export default function StaffDashboard() {
                     "Calm and settled",
                     "Alert and responsive",
                     "Comfortable",
+                    "Appears tired/fatigued",
                     "Sleeping/resting appropriately",
                     "Appears anxious",
                     "Appears distressed/agitated",
+                    "Appears confused/disorientated",
+                    "Appears physically unwell",
                     "No concerns observed",
                   ].map((item) => (
                     <label
@@ -1119,6 +1514,218 @@ export default function StaffDashboard() {
                   className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
                 />
               </div>
+
+              {selectedCheckin?.isFourHourly && (
+                <div className="rounded-[22px] border border-[#3b3520] bg-[#16120b] p-5 mb-6">
+                  <h3 className="text-[20px] font-semibold text-white mb-3">
+                    4-Hourly Review Required
+                  </h3>
+                  <p className="text-[#ffd15c] text-[14px]">
+                    Complete Mobility, Medication, Privacy, Personal Support and
+                    Safeguarding reviews for this check-in.
+                  </p>
+                </div>
+              )}
+
+              {selectedCheckin?.isFourHourly && (
+                <>
+                  {/* Mobility & Functional Ability Review */}
+                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                      Mobility & Functional Ability Review
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                      {[
+                        "Independent mobility maintained",
+                        "Walking with support",
+                        "Walking aid used",
+                        "Wheelchair used",
+                        "Reduced mobility observed",
+                        "Unsteady mobility observed",
+                        "Increased falls risk observed",
+                        "Fatigue affecting mobility",
+                        "Client remained seated/bed resting",
+                      ].map((item) => (
+                        <label
+                          key={item}
+                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={mobility.includes(item)}
+                            onChange={() =>
+                              toggleValue(item, mobility, setMobility)
+                            }
+                          />
+                          <span className="text-white text-[14px]">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      value={mobilityNotes}
+                      onChange={(e) => setMobilityNotes(e.target.value)}
+                      placeholder="Mobility notes..."
+                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                    />
+                  </div>
+                  {/* Medication Prompts & Health Observations */}
+                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                      Medication Prompts & Health Observations
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                      {[
+                        "Medication prompted",
+                        "Medication taken independently",
+                        "Medication refused",
+                        "Medication not due",
+                        "Health concern escalated",
+                        "No concerns observed",
+                        "Pain/discomfort observed",
+                        "Shortness of breath observed",
+                        "Appears lethargic",
+                        "Change in condition observed",
+                      ].map((item) => (
+                        <label
+                          key={item}
+                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={medication.includes(item)}
+                            onChange={() =>
+                              toggleValue(item, medication, setMedication)
+                            }
+                          />
+                          <span className="text-white text-[14px]">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      value={medicationNotes}
+                      onChange={(e) => setMedicationNotes(e.target.value)}
+                      placeholder="Medication/health notes..."
+                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                    />
+                  </div>
+                  {/* Privacy, Respect & Independence Review */}
+                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                      Privacy, Respect & Independence Review
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                      {[
+                        "Client spoken to respectfully",
+                        "Client addressed by preferred name",
+                        "Privacy respected",
+                        "Consent obtained before prompts/support",
+                        "Client involved in decisions",
+                        "Client choices respected",
+                        "Client encouraged to maintain independence",
+                        "Client not rushed during interaction",
+                        "Cultural/religious preferences respected",
+                      ].map((item) => (
+                        <label
+                          key={item}
+                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={privacyReview.includes(item)}
+                            onChange={() =>
+                              toggleValue(item, privacyReview, setPrivacyReview)
+                            }
+                          />
+                          <span className="text-white text-[14px]">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      value={privacyReviewNotes}
+                      onChange={(e) => setPrivacyReviewNotes(e.target.value)}
+                      placeholder="Privacy/respect notes..."
+                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                    />
+                  </div>
+                  {/* Personal Support & Comfort Review */}
+                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                      Personal Support & Comfort Review
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                      {[
+                        "Prompted toileting",
+                        "Prompted washing/freshening up",
+                        "Prompted oral care",
+                        "Prompted clothing change",
+                        "Client appeared clean and comfortable",
+                        "Client declined prompts",
+                        "No support required",
+                      ].map((item) => (
+                        <label
+                          key={item}
+                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={personalSupport.includes(item)}
+                            onChange={() =>
+                              toggleValue(
+                                item,
+                                personalSupport,
+                                setPersonalSupport,
+                              )
+                            }
+                          />
+                          <span className="text-white text-[14px]">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      value={personalSupportNotes}
+                      onChange={(e) => setPersonalSupportNotes(e.target.value)}
+                      placeholder="Personal support notes..."
+                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                    />
+                  </div>
+                  {/* Safeguarding Review */}
+                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                      Safeguarding Review
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                      {[
+                        "No safeguarding concerns observed",
+                        "Environmental concern identified",
+                        "Financial vulnerability concern observed",
+                        "Possible neglect concern observed",
+                        "Concern escalated appropriately",
+                        "Family/supervisor informed",
+                      ].map((item) => (
+                        <label
+                          key={item}
+                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={safeguarding.includes(item)}
+                            onChange={() =>
+                              toggleValue(item, safeguarding, setSafeguarding)
+                            }
+                          />
+                          <span className="text-white text-[14px]">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      value={safeguardingNotes}
+                      onChange={(e) => setSafeguardingNotes(e.target.value)}
+                      placeholder="Safeguarding notes..."
+                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                    />
+                  </div>
+                </>
+              )}
               <div className="h-[40px]" />
               <div className="flex flex-col sm:flex-row justify-end gap-4 sticky bottom-0 left-0 right-0 bg-[#060b12] pt-4 pb-2 border-t border-white/[0.06] mt-6">
                 <button

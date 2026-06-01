@@ -337,6 +337,11 @@ export default function AdminDashboard() {
                   Create Shift
                 </h2>
 
+                <p className="text-gray-400 text-sm mb-4">
+                  Select a staff member, patient, date and shift times using the
+                  calendar and time pickers below.
+                </p>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <select
                     value={selectedStaff}
@@ -364,26 +369,77 @@ export default function AdminDashboard() {
                     ))}
                   </select>
 
-                  <input
-                    type="date"
-                    value={shiftDate}
-                    onChange={(e) => setShiftDate(e.target.value)}
-                    className="h-[50px] rounded-[16px] border border-white/10 bg-[#11161d] px-4"
-                  />
+                  <div className="md:col-span-2">
+                    <label className="block text-sm text-gray-400 mb-2">
+                      Shift Date
+                    </label>
+                    <input
+                      type="date"
+                      value={shiftDate}
+                      onChange={(e) => setShiftDate(e.target.value)}
+                      onClick={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      onFocus={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      className="w-full h-[56px] rounded-[16px] border border-sky-400/30 bg-[#11161d] px-4 text-sky-300 font-semibold [color-scheme:dark] cursor-pointer"
+                    />
+                  </div>
 
-                  <input
-                    type="time"
-                    value={shiftStart}
-                    onChange={(e) => setShiftStart(e.target.value)}
-                    className="h-[50px] rounded-[16px] border border-white/10 bg-[#11161d] px-4"
-                  />
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      value={shiftStart}
+                      onChange={(e) => setShiftStart(e.target.value)}
+                      onClick={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      onFocus={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      className="w-full h-[56px] rounded-[16px] border border-emerald-300/30 bg-[#11161d] px-4 text-emerald-300 font-semibold [color-scheme:dark] cursor-pointer"
+                    />
+                  </div>
 
-                  <input
-                    type="time"
-                    value={shiftEnd}
-                    onChange={(e) => setShiftEnd(e.target.value)}
-                    className="h-[50px] rounded-[16px] border border-white/10 bg-[#11161d] px-4"
-                  />
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      value={shiftEnd}
+                      onChange={(e) => setShiftEnd(e.target.value)}
+                      onClick={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      onFocus={(e) => {
+                        const input = e.currentTarget as HTMLInputElement & {
+                          showPicker?: () => void;
+                        };
+                        input.showPicker?.();
+                      }}
+                      className="w-full h-[56px] rounded-[16px] border border-yellow-400/30 bg-[#11161d] px-4 text-yellow-300 font-semibold [color-scheme:dark] cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <button
@@ -405,44 +461,81 @@ export default function AdminDashboard() {
                     <p className="text-gray-500">No shifts created yet</p>
                   )}
 
-                  {shiftList.map((shift) => (
-                    <div
-                      key={shift.id}
-                      className="rounded-[16px] border border-white/10 bg-[#11161d]/80 p-4"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                        <div>
-                          <p className="text-sky-300 font-semibold">
-                            Staff: {shift.staff_name}
-                          </p>
+                  {shiftList.map((shift) => {
+                    const formattedDate = new Date(
+                      `${shift.shift_date}T00:00:00`,
+                    ).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    });
 
-                          <p className="text-emerald-300 text-sm mt-1">
-                            Patient: {shift.patient_name}
-                          </p>
-                        </div>
+                    return (
+                      <div
+                        key={shift.id}
+                        className="rounded-[20px] border border-white/10 bg-[#0c1118] p-5 sm:p-6"
+                      >
+                        <div className="space-y-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-4">
+                            <div>
+                              <h3 className="text-white text-[20px] font-semibold">
+                                {formattedDate}
+                              </h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                Scheduled Care Shift
+                              </p>
+                            </div>
+                            <div className="text-left sm:text-right space-y-1">
+                              <p className="text-sky-300 font-medium">
+                                <span className="text-gray-400">Staff:</span>{" "}
+                                {shift.staff_name}
+                              </p>
+                              <p className="text-emerald-300 text-sm">
+                                <span className="text-gray-400">Patient:</span>{" "}
+                                {shift.patient_name}
+                              </p>
+                            </div>
+                          </div>
 
-                        <div className="text-left sm:text-right">
-                          <p>{shift.shift_date}</p>
-
-                          <p className="text-gray-400 text-sm">
-                            {shift.start_time} - {shift.end_time}
-                          </p>
-
-                          <p
-                            className={`text-sm mt-2 font-semibold ${
-                              shift.status === "completed"
-                                ? "text-emerald-300"
-                                : "text-sky-300"
-                            }`}
-                          >
-                            {shift.status === "completed"
-                              ? "Completed"
-                              : "Active"}
-                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="rounded-[14px] border border-[#1e3a52] bg-[#0d1722] px-4 py-3">
+                              <p className="text-[#79bbff] text-[12px] uppercase mb-1">
+                                Shift Time
+                              </p>
+                              <p className="text-white font-semibold">
+                                {shift.start_time} - {shift.end_time}
+                              </p>
+                            </div>
+                            <div className="rounded-[14px] border border-[#3b3520] bg-[#1a160d] px-4 py-3">
+                              <p className="text-[#ffd15c] text-[12px] uppercase mb-1">
+                                Status
+                              </p>
+                              <p className="text-white font-semibold capitalize">
+                                {shift.status?.replaceAll("_", " ") ||
+                                  "Unknown"}
+                              </p>
+                            </div>
+                            <div className="rounded-[14px] border border-[#1f3f2f] bg-[#101a14] px-4 py-3">
+                              <p className="text-[#9eff5b] text-[12px] uppercase mb-1">
+                                Handover
+                              </p>
+                              <p
+                                className={`font-semibold ${
+                                  shift.handover_completed
+                                    ? "text-emerald-300"
+                                    : "text-yellow-300"
+                                }`}
+                              >
+                                {shift.handover_completed
+                                  ? "Submitted"
+                                  : "Pending"}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
