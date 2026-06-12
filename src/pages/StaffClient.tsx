@@ -6,7 +6,6 @@ import Navbar from "../components/Navbar";
 export default function StaffClient() {
   const [patient, setPatient] = useState<any>(null);
   const [patientDetails, setPatientDetails] = useState<any>(null);
-  const [latestHandover, setLatestHandover] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("");
@@ -85,7 +84,6 @@ export default function StaffClient() {
       if (!shift) {
         setPatient(null);
         setPatientDetails(null);
-        setLatestHandover(null);
         setLoading(false);
         return;
       }
@@ -102,26 +100,6 @@ export default function StaffClient() {
         .single();
 
       setPatientDetails(details);
-
-      const { data: handover } = await supabase
-        .from("handovers")
-        .select(
-          `
-          *,
-          shifts!handovers_shift_id_fkey (
-            staff_name,
-            shift_date,
-            start_time,
-            end_time
-          )
-        `,
-        )
-        .eq("shifts.patient_id", shift.patient_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      setLatestHandover(handover);
     } catch (error) {
       console.error(error);
     } finally {

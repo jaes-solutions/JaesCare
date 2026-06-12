@@ -10,12 +10,9 @@ export default function AdminPatients() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [adminName, setAdminName] = useState("Admin");
-  const [assignedStaffCount, setAssignedStaffCount] = useState(0);
   const [checkinCount, setCheckinCount] = useState(0);
   const [patientCheckins, setPatientCheckins] = useState<any[]>([]);
   const [patientHandovers, setPatientHandovers] = useState<any[]>([]);
-  const [upcomingShift, setUpcomingShift] = useState<string>("-");
-  const [compliance, setCompliance] = useState("0%");
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
 
@@ -133,23 +130,9 @@ export default function AdminPatients() {
         .order("shift_date", { ascending: true });
 
       if (shifts && shifts.length > 0) {
-        setAssignedStaffCount(
-          new Set(shifts.map((s) => s.staff_id).filter(Boolean)).size,
-        );
-
-        const nextShift = shifts.find(
-          (s) => s.shift_date >= new Date().toISOString().split("T")[0],
-        );
-
-        setUpcomingShift(nextShift?.shift_date || "-");
-
-        const completed = shifts.filter((s) => s.handover_completed).length;
-
-        setCompliance(`${Math.round((completed / shifts.length) * 100) || 0}%`);
+        // removed assignedStaffCount, upcomingShift, compliance state updates future ref
       } else {
-        setAssignedStaffCount(0);
-        setUpcomingShift("-");
-        setCompliance("0%");
+        // removed assignedStaffCount, upcomingShift, compliance state updates
       }
     } catch (error) {
       console.error(error);
