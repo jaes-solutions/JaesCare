@@ -275,15 +275,13 @@ export default function StaffDashboard() {
         .eq("id", session.user.id)
         .single();
 
-      if (error || !profile || profile.role !== "staff") {
+      if (error || !profile || profile.role?.trim().toLowerCase() !== "staff") {
         navigate("/login");
         return;
       }
 
       setStaffName(profile.full_name || "Staff");
       setStaffRole(profile.role || "staff");
-
-      console.log("Logged in user ID:", session.user.id);
 
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
@@ -314,15 +312,13 @@ export default function StaffDashboard() {
             await supabase
               .from("shifts")
               .update({ status: "done" })
-              .eq("id", shift.id);
+              .eq("id", shift.id)
+              .eq("staff_id", session.user.id);
 
             shift.status = "done";
           }
         }
       }
-
-      console.log("Fetched shifts:", shiftData);
-      console.log("Shift fetch error:", shiftError);
 
       if (!shiftError && shiftData) {
         const sortedShifts = [...shiftData].sort((a, b) => {
@@ -452,20 +448,62 @@ export default function StaffDashboard() {
                 action = "Missed";
                 note = "Check-in window expired";
 
-                await supabase.from("checkins").upsert(
-                  {
-                    shift_id: shift.id,
-                    patient_id: shift.patient_id,
-                    patient_name: shift.patient_name,
-                    staff_id: shift.staff_id,
-                    staff_name: shift.staff_name,
-                    scheduled_time: checkTime.toISOString(),
-                    status: "missed",
-                  },
-                  {
-                    onConflict: "shift_id,scheduled_time",
-                  },
+                // Calculate 4-hourly missed status
+                const hoursFromShiftStart = Math.round(
+                  (checkTime.getTime() -
+                    ukToUTC(
+                      shift.shift_date,
+                      shift.start_time.slice(0, 5),
+                    ).getTime()) /
+                    (1000 * 60 * 60),
                 );
+
+                const isFourHourlyMissed =
+                  hoursFromShiftStart > 0 && hoursFromShiftStart % 4 === 0;
+
+                const { error: missedError } = await supabase
+                  .from("checkins")
+                  .upsert(
+                    {
+                      shift_id: shift.id,
+                      patient_id: shift.patient_id,
+                      patient_name: shift.patient_name,
+                      staff_id: shift.staff_id,
+                      staff_name: shift.staff_name,
+                      scheduled_time: checkTime.toISOString(),
+                      submitted_at: new Date().toISOString(),
+                      status: "missed",
+                      wellbeing: [],
+                      wellbeing_notes: "",
+                      mood: [],
+                      mood_notes: "",
+                      hydration: [],
+                      hydration_notes: "",
+                      safety: [],
+                      safety_notes: "",
+                      engagement: [],
+                      engagement_notes: "",
+                      ...(isFourHourlyMissed && {
+                        mobility: [],
+                        mobility_notes: "",
+                        medication: [],
+                        medication_notes: "",
+                        privacy: [],
+                        privacy_notes: "",
+                        support: [],
+                        support_notes: "",
+                        safeguarding: [],
+                        safeguarding_notes: "",
+                      }),
+                    },
+                    {
+                      onConflict: "shift_id,scheduled_time",
+                    },
+                  );
+
+                if (missedError) {
+                  console.error("Failed to save missed check-in:", missedError);
+                }
               }
             }
 
@@ -622,8 +660,6 @@ export default function StaffDashboard() {
         return;
       }
 
-      console.log("Check-in saved successfully");
-
       await checkStaffAccess();
 
       setTodayChecks((prev: any[]) =>
@@ -716,7 +752,7 @@ export default function StaffDashboard() {
     });
 
     if (error) {
-      console.error(error);
+      console.error("Failed to save handover", error);
       alert("Failed to save handover");
       return;
     }
@@ -724,7 +760,8 @@ export default function StaffDashboard() {
     await supabase
       .from("shifts")
       .update({ handover_completed: true })
-      .eq("id", selectedShift.id);
+      .eq("id", selectedShift.id)
+      .eq("staff_id", session.user.id);
 
     setShowHandoverModal(false);
     setSelectedShift(null);

@@ -14,6 +14,7 @@ import {
 import carelogo from "../assets/carelogo.png";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 type SidebarProps = {
   onLogout: () => void;
@@ -21,6 +22,7 @@ type SidebarProps = {
 
 export default function Sidebar({ onLogout }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   return (
     <>
       {!open && (
@@ -85,7 +87,13 @@ export default function Sidebar({ onLogout }: SidebarProps) {
               <span className="text-[14px] text-[#eef2f7]">Staff</span>
             </button>
 
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
+            <button
+              onClick={() => {
+                navigate("/adminPatients");
+                setOpen(false);
+              }}
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
+            >
               <ClipboardList
                 size={18}
                 strokeWidth={2}

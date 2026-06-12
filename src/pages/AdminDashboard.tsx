@@ -27,12 +27,17 @@ export default function AdminDashboard() {
   const [staffList, setStaffList] = useState<any[]>([]);
   const [patientList, setPatientList] = useState<any[]>([]);
   const [shiftList, setShiftList] = useState<any[]>([]);
+  const [checkinCount, setCheckinCount] = useState(0);
 
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedPatient, setSelectedPatient] = useState("");
   const [shiftDate, setShiftDate] = useState("");
   const [shiftStart, setShiftStart] = useState("");
   const [shiftEnd, setShiftEnd] = useState("");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const todayShifts = shiftList.filter((shift) => shift.shift_date === today);
 
   useEffect(() => {
     checkAdminAccess();
@@ -71,8 +76,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      console.log("PROFILES FROM SUPABASE:", profiles);
-
       const staffProfiles = (profiles || []).filter(
         (item) => item.role?.trim().toLowerCase() === "staff",
       );
@@ -80,9 +83,6 @@ export default function AdminDashboard() {
       const patientProfiles = (profiles || []).filter(
         (item) => item.role?.trim().toLowerCase() === "patient",
       );
-
-      console.log("STAFF LIST:", staffProfiles);
-      console.log("PATIENT LIST:", patientProfiles);
 
       setStaffList(staffProfiles);
       setPatientList(patientProfiles);
@@ -98,6 +98,16 @@ export default function AdminDashboard() {
       } else {
         setShiftList(shifts || []);
       }
+
+      const { count: totalCheckins, error: checkinsError } = await supabase
+        .from("checkins")
+        .select("*", { count: "exact", head: true });
+
+      if (checkinsError) {
+        console.error(checkinsError);
+      } else {
+        setCheckinCount(totalCheckins || 0);
+      }
     } catch (err) {
       console.error(err);
       navigate("/login");
@@ -111,6 +121,30 @@ export default function AdminDashboard() {
     navigate("/login");
   };
 
+  const scrollToCreateAccount = () => {
+    document
+      .getElementById("create-account-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToCreateShift = () => {
+    document
+      .getElementById("create-shift-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToShifts = () => {
+    document
+      .getElementById("all-shifts-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToSummary = () => {
+    document
+      .getElementById("summary-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const createShift = async () => {
     try {
       const staff = staffList.find((s) => s.id === selectedStaff);
@@ -121,6 +155,19 @@ export default function AdminDashboard() {
         return;
       }
 
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const selectedDate = new Date(`${shiftDate}T00:00:00`);
+
+      let shiftStatus = "active";
+
+      if (selectedDate > today) {
+        shiftStatus = "upcoming";
+      } else if (selectedDate < today) {
+        shiftStatus = "completed";
+      }
+
       const { error } = await supabase.from("shifts").insert({
         patient_id: patient.id,
         patient_name: patient.full_name,
@@ -129,7 +176,7 @@ export default function AdminDashboard() {
         shift_date: shiftDate,
         start_time: shiftStart,
         end_time: shiftEnd,
-        status: "active",
+        status: shiftStatus,
       });
 
       if (error) {
@@ -153,7 +200,6 @@ export default function AdminDashboard() {
   const createUser = async () => {
     try {
       const session = await supabase.auth.getSession();
-      console.log("SESSION:", session);
 
       if (!session.data.session) {
         alert("No active session found");
@@ -178,8 +224,6 @@ export default function AdminDashboard() {
       );
 
       const data = await response.json();
-
-      console.log("CREATE USER RESPONSE:", data);
 
       if (!response.ok) {
         alert(data.error || "Failed to create user");
@@ -272,7 +316,10 @@ export default function AdminDashboard() {
             {/* LEFT */}
             <div className="space-y-8">
               {/* CREATE USER */}
-              <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6">
+              <div
+                id="create-account-section"
+                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h2 className="text-[20px] sm:text-[24px] font-semibold mb-1.5">
@@ -332,7 +379,10 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6">
+              <div
+                id="create-shift-section"
+                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+              >
                 <h2 className="text-[20px] sm:text-[24px] font-semibold mb-6">
                   Create Shift
                 </h2>
@@ -451,7 +501,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* SHIFTS LIST */}
-              <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6">
+              <div
+                id="all-shifts-section"
+                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+              >
                 <h2 className="text-[20px] sm:text-[24px] font-semibold mb-6">
                   All Shifts
                 </h2>
@@ -511,8 +564,10 @@ export default function AdminDashboard() {
                                 Status
                               </p>
                               <p className="text-white font-semibold capitalize">
-                                {shift.status?.replaceAll("_", " ") ||
-                                  "Unknown"}
+                                {(shift.status || "unknown").replaceAll(
+                                  "_",
+                                  " ",
+                                )}
                               </p>
                             </div>
                             <div className="rounded-[14px] border border-[#1f3f2f] bg-[#101a14] px-4 py-3">
@@ -543,7 +598,10 @@ export default function AdminDashboard() {
             {/* RIGHT */}
             <div className="space-y-8">
               {/* SUMMARY */}
-              <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6">
+              <div
+                id="summary-section"
+                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+              >
                 <h2 className="text-[20px] font-semibold mb-6">
                   Today's Summary
                 </h2>
@@ -553,11 +611,11 @@ export default function AdminDashboard() {
                     <Users className="mx-auto mb-4 text-sky-300" />
 
                     <p className="text-gray-500 text-[13px] text-[12px] mb-1.5">
-                      Staff Online
+                      Staff
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      18
+                      {staffList.length}
                     </h3>
                   </div>
 
@@ -569,7 +627,7 @@ export default function AdminDashboard() {
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      87
+                      {checkinCount}
                     </h3>
                   </div>
 
@@ -581,7 +639,7 @@ export default function AdminDashboard() {
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      2
+                      {todayShifts.filter((s) => !s.handover_completed).length}
                     </h3>
                   </div>
 
@@ -593,7 +651,14 @@ export default function AdminDashboard() {
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      98%
+                      {todayShifts.length === 0
+                        ? "100%"
+                        : `${Math.round(
+                            (todayShifts.filter((s) => s.handover_completed)
+                              .length /
+                              todayShifts.length) *
+                              100,
+                          )}%`}
                     </h3>
                   </div>
                 </div>
@@ -606,22 +671,34 @@ export default function AdminDashboard() {
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <button className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-sky-400/30 transition-all duration-300">
+                  <button
+                    onClick={scrollToCreateAccount}
+                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-sky-400/30 transition-all duration-300"
+                  >
                     <UserPlus className="text-sky-300" />
                     Add Staff
                   </button>
 
-                  <button className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-emerald-300/30 transition-all duration-300">
+                  <button
+                    onClick={scrollToShifts}
+                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-emerald-300/30 transition-all duration-300"
+                  >
                     <ClipboardList className="text-emerald-300" />
-                    View Patients
+                    View Shifts
                   </button>
 
-                  <button className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-yellow-400/30 transition-all duration-300">
+                  <button
+                    onClick={scrollToSummary}
+                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-yellow-400/30 transition-all duration-300"
+                  >
                     <Bell className="text-yellow-400" />
                     Notifications
                   </button>
 
-                  <button className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-red-400/30 transition-all duration-300">
+                  <button
+                    onClick={scrollToCreateShift}
+                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-red-400/30 transition-all duration-300"
+                  >
                     <FileText className="text-red-400" />
                     Reports
                   </button>

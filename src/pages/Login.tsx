@@ -11,6 +11,24 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      alert("Please enter your email address first");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      alert("Unable to send reset email");
+      return;
+    }
+
+    alert("Password reset email sent");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -23,7 +41,7 @@ export default function Login() {
       });
 
       if (error) {
-        alert(error.message);
+        alert("Invalid email or password");
         return;
       }
 
@@ -39,10 +57,6 @@ export default function Login() {
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
-
-      console.log("PROFILE:", profile);
-      console.log("PROFILE ERROR:", profileError);
-      console.log("USER ID:", user.id);
 
       if (profileError) {
         alert(profileError.message);
@@ -168,6 +182,7 @@ export default function Login() {
             <button
               type="button"
               className="text-sky-300 hover:text-sky-200 transition-all duration-300"
+              onClick={handleResetPassword}
             >
               Reset Password
             </button>

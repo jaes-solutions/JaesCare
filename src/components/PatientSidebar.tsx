@@ -20,7 +20,7 @@ type SidebarProps = {
   onLogout: () => void;
 };
 
-export default function Sidebar({ onLogout }: SidebarProps) {
+export default function PatientSidebar({ onLogout }: SidebarProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   return (
@@ -67,7 +67,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
           <nav className="px-4 flex flex-col gap-1.5">
             {/* ACTIVE */}
             <button
-              onClick={() => navigate("/staff-dashboard")}
+              onClick={() => navigate("/patient-dashboard")}
               className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
             >
               <LayoutDashboard
@@ -81,26 +81,20 @@ export default function Sidebar({ onLogout }: SidebarProps) {
             </button>
 
             {/* ITEMS */}
-            <button
-              onClick={() => {
-                setOpen(false);
-                navigate("/staff-client");
-              }}
-              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
-            >
+            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
               <User size={18} strokeWidth={2} className="text-[#c8d1dc]" />
 
-              <span className="text-[14px] text-[#eef2f7]">My Client</span>
+              <span className="text-[14px] text-[#eef2f7]">My Profile</span>
             </button>
 
             <button
-              onClick={() => navigate("/hourly-check")}
+              onClick={() => navigate("/patient-records")}
               className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
             >
               <Clock3 size={18} strokeWidth={2.2} className="text-[#c8d1dc]" />
 
               <span className="text-[14px] text-[#c8d1dc] font-medium">
-                Hourly Check-ins
+                Care Records
               </span>
             </button>
 
@@ -121,7 +115,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                 className="text-[#c8d1dc]"
               />
 
-              <span className="text-[14px] text-[#eef2f7]">Handover</span>
+              <span className="text-[14px] text-[#eef2f7]">Care Plan</span>
             </button>
 
             <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
@@ -131,7 +125,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                 className="text-[#c8d1dc]"
               />
 
-              <span className="text-[14px] text-[#eef2f7]">My Notes</span>
+              <span className="text-[14px] text-[#eef2f7]">Medical Notes</span>
             </button>
 
             <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">

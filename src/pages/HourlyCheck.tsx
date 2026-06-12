@@ -88,17 +88,18 @@ export default function HourlyCheck() {
         .eq("id", session.user.id)
         .single();
 
-      console.log("SESSION", session);
-      console.log("PROFILE", profile);
-      console.log("PROFILE ERROR", error);
-
-      if (profile) {
-        setStaffName(profile.full_name || "Staff");
-        setStaffRole(profile.role || "staff");
-      } else {
-        setStaffName("Staff");
-        setStaffRole("staff");
+      if (error || !profile) {
+        navigate("/login");
+        return;
       }
+
+      if (profile.role !== "staff") {
+        navigate("/login");
+        return;
+      }
+
+      setStaffName(profile.full_name || "Staff");
+      setStaffRole(profile.role || "staff");
       const { data: shiftsData } = await supabase
         .from("shifts")
         .select("*")
