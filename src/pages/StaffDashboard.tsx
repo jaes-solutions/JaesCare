@@ -785,24 +785,39 @@ export default function StaffDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white">
-        Loading dashboard...
+      <div className="min-h-screen bg-white dark:bg-[#03060b] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
+            <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+          </div>
+
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-black dark:text-white mb-2">
+              Preparing Dashboard
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading shifts, check-ins and patient data...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#03060b] text-white flex relative isolate">
+    <div className="min-h-screen bg-white dark:bg-[#03060b] text-black dark:text-white flex relative isolate transition-colors duration-300">
       <Sidebar onLogout={handleLogout} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.12),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(134,239,172,0.10),transparent_30%)]" />
 
-      <div className="flex-1 lg:ml-[245px] w-full min-w-0 min-h-screen bg-[#03060b] pt-[78px] overflow-x-hidden relative z-0">
+      <div className="flex-1 lg:ml-[245px] w-full min-w-0 min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px] overflow-x-hidden relative z-0">
         <Navbar name={staffName} role={staffRole} />
 
         {/* MAIN */}
         <main className="relative z-10 w-full max-w-7xl mx-auto p-3 sm:p-5 lg:p-7 overflow-hidden">
           {/* TOP OVERVIEW */}
-          <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl overflow-hidden mb-5">
+          <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl overflow-hidden mb-5">
             <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.06]">
               <div className="flex items-center gap-5 p-4 sm:p-6">
                 <div className="w-[90px] h-[90px] rounded-full bg-[#0f2234] border border-[#1f3b56] flex items-center justify-center text-[42px] text-[#76bfff]">
@@ -814,11 +829,11 @@ export default function StaffDashboard() {
                     My Client
                   </p>
 
-                  <h2 className="text-[24px] font-semibold text-white leading-tight mb-2">
+                  <h2 className="text-[24px] font-semibold text-black dark:text-white leading-tight mb-2">
                     {assignedPatient?.patient_name || "No Patient Assigned"}
                   </h2>
 
-                  <p className="text-[#9ca8b5] text-[13px]">
+                  <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
                     {assignedPatient?.patient_role || "Care Patient"}
                   </p>
                 </div>
@@ -830,13 +845,15 @@ export default function StaffDashboard() {
                 </div>
 
                 <div>
-                  <p className="text-white text-[14px] mb-1">Care Plan</p>
+                  <p className="text-black dark:text-white text-[14px] mb-1">
+                    Care Plan
+                  </p>
 
                   <h2 className="text-[#8eff4d] text-[24px] font-semibold mb-2">
                     Active
                   </h2>
 
-                  <p className="text-[#9ca8b5] text-[13px]">
+                  <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
                     Started: 20 May 2026
                   </p>
                 </div>
@@ -848,9 +865,11 @@ export default function StaffDashboard() {
                 </div>
 
                 <div>
-                  <p className="text-white text-[14px] mb-1">Current Shift</p>
+                  <p className="text-black dark:text-white text-[14px] mb-1">
+                    Current Shift
+                  </p>
 
-                  <h2 className="text-white text-[24px] font-semibold mb-2">
+                  <h2 className="text-black dark:text-white text-[24px] font-semibold mb-2">
                     {(() => {
                       const ukNow = new Date(
                         new Date().toLocaleString("en-US", {
@@ -879,7 +898,7 @@ export default function StaffDashboard() {
                     })()}
                   </h2>
 
-                  <p className="text-[#9ca8b5] text-[13px]">
+                  <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
                     {(() => {
                       const ukNow = new Date(
                         new Date().toLocaleString("en-US", {
@@ -915,14 +934,14 @@ export default function StaffDashboard() {
           </div>
 
           {/* SHIFT CALENDAR */}
-          <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-6 mb-5">
+          <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-6 mb-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-[22px] font-semibold text-white mb-1">
+                <h2 className="text-[22px] font-semibold text-black dark:text-white mb-1">
                   My Shift Calendar
                 </h2>
 
-                <p className="text-[#94a3b8] text-[14px]">
+                <p className="text-gray-600 dark:text-[#94a3b8] text-[14px]">
                   Current/latest shift shown. Expand to view all shifts.
                 </p>
               </div>
@@ -942,7 +961,7 @@ export default function StaffDashboard() {
             </div>
 
             {shifts.length === 0 ? (
-              <div className="h-[120px] rounded-[18px] border border-dashed border-white/[0.08] bg-[#0b1018] flex items-center justify-center text-[#7f8b99] text-[15px]">
+              <div className="h-[120px] rounded-[18px] border border-dashed border-black/10 dark:border-white/[0.08] bg-gray-100 dark:bg-[#0b1018] flex items-center justify-center text-[#7f8b99] text-[15px]">
                 No shifts assigned yet.
               </div>
             ) : (
@@ -950,49 +969,49 @@ export default function StaffDashboard() {
                 {(showAllShifts ? shifts : shifts.slice(0, 1)).map((shift) => (
                   <div
                     key={shift.id}
-                    className="rounded-[18px] border border-white/[0.06] bg-[#0b1018] p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+                    className="rounded-[18px] border border-black/10 dark:border-white/[0.06] bg-gray-100 dark:bg-[#0b1018] p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
                   >
                     <div>
                       <p className="text-[#7cbcff] text-[13px] mb-2 font-medium uppercase tracking-[1px]">
                         Shift Date
                       </p>
 
-                      <h3 className="text-white text-[20px] font-semibold mb-2">
+                      <h3 className="text-black dark:text-white text-[20px] font-semibold mb-2">
                         {shift.shift_date}
                       </h3>
 
-                      <p className="text-[#9ca8b5] text-[14px]">
+                      <p className="text-gray-600 dark:text-[#9ca8b5] text-[14px]">
                         Patient: {shift.patient_name}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-                      <div className="min-w-[140px] rounded-[16px] border border-[#1e3a52] bg-[#0d1722] px-4 py-3">
+                      <div className="min-w-[140px] rounded-[16px] border border-black/10 dark:border-[#1e3a52] bg-white dark:bg-[#0d1722] px-4 py-3">
                         <p className="text-[#79bbff] text-[12px] mb-1 uppercase">
                           Start Time
                         </p>
 
-                        <h4 className="text-white text-[18px] font-semibold">
+                        <h4 className="text-black dark:text-white text-[18px] font-semibold">
                           {shift.start_time}
                         </h4>
                       </div>
 
-                      <div className="min-w-[140px] rounded-[16px] border border-[#1f3f2f] bg-[#101a14] px-4 py-3">
+                      <div className="min-w-[140px] rounded-[16px] border border-black/10 dark:border-[#1f3f2f] bg-gray-50 dark:bg-[#101a14] px-4 py-3">
                         <p className="text-[#9eff5b] text-[12px] mb-1 uppercase">
                           End Time
                         </p>
 
-                        <h4 className="text-white text-[18px] font-semibold">
+                        <h4 className="text-black dark:text-white text-[18px] font-semibold">
                           {shift.end_time}
                         </h4>
                       </div>
 
-                      <div className="min-w-[140px] rounded-[16px] border border-[#3b3520] bg-[#1a160d] px-4 py-3">
+                      <div className="min-w-[140px] rounded-[16px] border border-black/10 dark:border-[#3b3520] bg-gray-50 dark:bg-[#1a160d] px-4 py-3">
                         <p className="text-[#ffd15c] text-[12px] mb-1 uppercase">
                           Status
                         </p>
 
-                        <h4 className="text-white text-[18px] font-semibold capitalize">
+                        <h4 className="text-black dark:text-white text-[18px] font-semibold capitalize">
                           {(() => {
                             const ukNow = new Date(
                               new Date().toLocaleString("en-US", {
@@ -1071,14 +1090,14 @@ export default function StaffDashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-5">
-            <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-5">
+            <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-[18px] font-semibold text-white">
+                  <h2 className="text-[18px] font-semibold text-black dark:text-white">
                     Today's Hourly Check-ins
                   </h2>
 
-                  <div className="w-6 h-6 rounded-full border border-[#29425d] text-[#80bfff] text-[12px] flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full border border-black/10 dark:border-[#29425d] text-[#80bfff] text-[12px] flex items-center justify-center">
                     i
                   </div>
                 </div>
@@ -1098,7 +1117,7 @@ export default function StaffDashboard() {
                     className="min-h-[66px] py-3 border-b border-white/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 sm:gap-5 w-full sm:w-auto">
-                      <p className="text-white text-[15px] w-[70px]">
+                      <p className="text-black dark:text-white text-[15px] w-[70px]">
                         {item.time}
                       </p>
 
@@ -1128,7 +1147,7 @@ export default function StaffDashboard() {
                         >
                           {item.status}
                         </p>
-                        <p className="text-[11px] text-[#6f7f91] mt-1">
+                        <p className="text-[11px] text-gray-500 dark:text-[#6f7f91] mt-1">
                           {item.note}
                         </p>
                       </div>
@@ -1154,7 +1173,7 @@ export default function StaffDashboard() {
                           Missed
                         </button>
                       ) : (
-                        <p className="text-[15px] text-[#d5dde7]">
+                        <p className="text-[15px] text-gray-800 dark:text-[#d5dde7]">
                           {item.action}
                         </p>
                       )}
@@ -1165,8 +1184,8 @@ export default function StaffDashboard() {
             </div>
 
             <div className="space-y-5">
-              <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-5">
-                <h2 className="text-[18px] font-semibold text-white mb-5">
+              <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-5">
+                <h2 className="text-[18px] font-semibold text-black dark:text-white mb-5">
                   Next Check-in
                 </h2>
 
@@ -1175,12 +1194,12 @@ export default function StaffDashboard() {
                     ◔
                   </div>
                   <div>
-                    <h2 className="text-[42px] font-semibold text-white leading-none mb-2">
+                    <h2 className="text-[42px] font-semibold text-black dark:text-white leading-none mb-2">
                       {nextCheckin?.isHandover
                         ? "Handover"
                         : nextCheckin?.time || "--:--"}
                     </h2>
-                    <p className="text-[#b5c0cb] text-[14px]">
+                    <p className="text-gray-600 dark:text-[#b5c0cb] text-[14px]">
                       {nextCheckin
                         ? nextCheckin.isHandover
                           ? `Handover begins at ${nextCheckin.time}`
@@ -1197,14 +1216,14 @@ export default function StaffDashboard() {
                   />
                 </div>
 
-                <p className="text-[#cfd8e1] text-[15px]">
+                <p className="text-gray-600 dark:text-[#cfd8e1] text-[15px]">
                   Check-in window opens in
                   <span className="text-[#9eff5b]"> {nextCountdown}</span>
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-5">
-                <h2 className="text-[18px] font-semibold text-white mb-5">
+              <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-5">
+                <h2 className="text-[18px] font-semibold text-black dark:text-white mb-5">
                   Today's Summary
                 </h2>
 
@@ -1217,7 +1236,7 @@ export default function StaffDashboard() {
                   ].map((item, index) => (
                     <div
                       key={index}
-                      className="rounded-[18px] border border-white/[0.06] bg-[#0b1018] h-[140px] flex flex-col items-center justify-center"
+                      className="rounded-[18px] border border-black/10 dark:border-white/[0.06] bg-gray-100 dark:bg-[#0b1018] h-[140px] flex flex-col items-center justify-center"
                     >
                       <p
                         className="text-[14px] mb-3"
@@ -1226,7 +1245,7 @@ export default function StaffDashboard() {
                         {item[0]}
                       </p>
 
-                      <h2 className="text-[42px] font-semibold text-white leading-none">
+                      <h2 className="text-[42px] font-semibold text-black dark:text-white leading-none">
                         {item[1]}
                       </h2>
                     </div>
@@ -1241,8 +1260,8 @@ export default function StaffDashboard() {
       {/* HANDOVER MODAL */}
       {showHandoverModal && (
         <div className="fixed inset-0 z-[2147483647] bg-black/90 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-[#060b12] rounded-[24px] p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-white text-[28px] font-semibold mb-6">
+          <div className="w-full max-w-4xl bg-white dark:bg-[#060b12] rounded-[24px] p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-black dark:text-white text-[28px] font-semibold mb-6">
               End of Shift Handover
             </h2>
 
@@ -1277,11 +1296,13 @@ export default function StaffDashboard() {
               ["Detailed handover notes", detailedNotes, setDetailedNotes],
             ].map(([label, value, setter]: any) => (
               <div key={label} className="mb-4">
-                <label className="block text-white mb-2">{label}</label>
+                <label className="block text-black dark:text-white mb-2">
+                  {label}
+                </label>
                 <textarea
                   value={value}
                   onChange={(e) => setter(e.target.value)}
-                  className="w-full h-[100px] rounded-[12px] bg-[#0d1722] border border-[#1d3248] p-3 text-white"
+                  className="w-full h-[100px] rounded-[12px] bg-white dark:bg-[#0d1722] border border-black/10 dark:border-[#1d3248] p-3 text-black dark:text-white"
                 />
               </div>
             ))}
@@ -1289,7 +1310,7 @@ export default function StaffDashboard() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowHandoverModal(false)}
-                className="px-5 h-[48px] border border-[#1d3248] rounded-[12px] text-white"
+                className="px-5 h-[48px] border border-black/10 dark:border-[#1d3248] rounded-[12px] text-black dark:text-white"
               >
                 Cancel
               </button>
@@ -1317,43 +1338,43 @@ export default function StaffDashboard() {
           }}
         >
           <div className="min-h-screen w-full flex items-start justify-center px-4 py-10">
-            <div className="relative z-[2147483647] w-full max-w-5xl rounded-[20px] sm:rounded-[30px] border border-white/[0.06] bg-[#060b12] p-4 sm:p-6 shadow-2xl h-[92vh] overflow-y-auto">
+            <div className="relative z-[2147483647] w-full max-w-5xl rounded-[20px] sm:rounded-[30px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12] p-4 sm:p-6 shadow-2xl h-[92vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-[28px] font-semibold text-white mb-2">
+                  <h2 className="text-[28px] font-semibold text-black dark:text-white mb-2">
                     Hourly Care Check-in
                   </h2>
 
-                  <p className="text-[#8da1b5] text-[14px]">
+                  <p className="text-gray-600 dark:text-[#8da1b5] text-[14px]">
                     Complete the care documentation for this visit.
                   </p>
                 </div>
 
                 <button
                   onClick={() => setShowCheckinModal(false)}
-                  className="w-[46px] h-[46px] rounded-full border border-[#1f3347] bg-[#0c1825] text-white text-[22px]"
+                  className="w-[46px] h-[46px] rounded-full border border-black/10 dark:border-[#1f3347] bg-gray-50 dark:bg-[#0c1825] text-black dark:text-white text-[22px]"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="rounded-[22px] border border-[#1b2c3d] bg-[#0d1722] p-5 mb-6 flex items-center justify-between">
+              <div className="rounded-[22px] border border-black/10 dark:border-[#1b2c3d] bg-white dark:bg-[#0d1722] p-5 mb-6 flex items-center justify-between">
                 <div>
                   <p className="text-[#79bbff] text-[13px] mb-1 uppercase">
                     Check-in Time
                   </p>
 
-                  <h2 className="text-[32px] font-semibold text-white">
+                  <h2 className="text-[32px] font-semibold text-black dark:text-white">
                     {selectedCheckin?.time}
                   </h2>
                 </div>
 
-                <div className="w-[72px] h-[72px] rounded-full bg-[#102235] border border-[#22415d] flex items-center justify-center text-[#5fb5ff] text-[30px]">
+                <div className="w-[72px] h-[72px] rounded-full bg-gray-50 dark:bg-[#102235] border border-black/10 dark:border-[#22415d] flex items-center justify-center text-[#5fb5ff] text-[30px]">
                   ◔
                 </div>
               </div>
-              <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                <h3 className="text-[20px] font-semibold text-white mb-5">
+              <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                   Wellbeing & Presentation
                 </h3>
 
@@ -1372,7 +1393,7 @@ export default function StaffDashboard() {
                   ].map((item) => (
                     <label
                       key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                      className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -1382,7 +1403,9 @@ export default function StaffDashboard() {
                         }
                       />
 
-                      <span className="text-white text-[14px]">{item}</span>
+                      <span className="text-black dark:text-white text-[14px]">
+                        {item}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -1391,12 +1414,12 @@ export default function StaffDashboard() {
                   value={wellbeingNotes}
                   onChange={(e) => setWellbeingNotes(e.target.value)}
                   placeholder="Detailed wellbeing notes..."
-                  className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                  className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                 />
               </div>
 
-              <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                <h3 className="text-[20px] font-semibold text-white mb-5">
+              <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                   Mood & Emotional Wellbeing
                 </h3>
 
@@ -1411,7 +1434,7 @@ export default function StaffDashboard() {
                   ].map((item) => (
                     <label
                       key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                      className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -1419,7 +1442,9 @@ export default function StaffDashboard() {
                         onChange={() => toggleValue(item, mood, setMood)}
                       />
 
-                      <span className="text-white text-[14px]">{item}</span>
+                      <span className="text-black dark:text-white text-[14px]">
+                        {item}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -1428,12 +1453,12 @@ export default function StaffDashboard() {
                   value={moodNotes}
                   onChange={(e) => setMoodNotes(e.target.value)}
                   placeholder="Detailed mood notes..."
-                  className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                  className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                 />
               </div>
 
-              <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                <h3 className="text-[20px] font-semibold text-white mb-5">
+              <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                   Hydration & Nutrition
                 </h3>
 
@@ -1451,7 +1476,7 @@ export default function StaffDashboard() {
                   ].map((item) => (
                     <label
                       key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                      className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -1461,7 +1486,9 @@ export default function StaffDashboard() {
                         }
                       />
 
-                      <span className="text-white text-[14px]">{item}</span>
+                      <span className="text-black dark:text-white text-[14px]">
+                        {item}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -1470,12 +1497,12 @@ export default function StaffDashboard() {
                   value={hydrationNotes}
                   onChange={(e) => setHydrationNotes(e.target.value)}
                   placeholder="Hydration notes..."
-                  className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                  className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                 />
               </div>
 
-              <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                <h3 className="text-[20px] font-semibold text-white mb-5">
+              <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                   Safety & Environment
                 </h3>
 
@@ -1490,7 +1517,7 @@ export default function StaffDashboard() {
                   ].map((item) => (
                     <label
                       key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                      className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -1498,7 +1525,9 @@ export default function StaffDashboard() {
                         onChange={() => toggleValue(item, safety, setSafety)}
                       />
 
-                      <span className="text-white text-[14px]">{item}</span>
+                      <span className="text-black dark:text-white text-[14px]">
+                        {item}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -1507,7 +1536,7 @@ export default function StaffDashboard() {
                   value={safetyNotes}
                   onChange={(e) => setSafetyNotes(e.target.value)}
                   placeholder="Safety notes..."
-                  className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                  className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                 />
               </div>
 
@@ -1553,8 +1582,8 @@ export default function StaffDashboard() {
               </div>
 
               {selectedCheckin?.isFourHourly && (
-                <div className="rounded-[22px] border border-[#3b3520] bg-[#16120b] p-5 mb-6">
-                  <h3 className="text-[20px] font-semibold text-white mb-3">
+                <div className="rounded-[22px] border border-black/10 dark:border-[#3b3520] bg-gray-50 dark:bg-[#16120b] p-5 mb-6">
+                  <h3 className="text-[20px] font-semibold text-black dark:text-white mb-3">
                     4-Hourly Review Required
                   </h3>
                   <p className="text-[#ffd15c] text-[14px]">
@@ -1567,8 +1596,8 @@ export default function StaffDashboard() {
               {selectedCheckin?.isFourHourly && (
                 <>
                   {/* Mobility & Functional Ability Review */}
-                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                  <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                       Mobility & Functional Ability Review
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -1585,7 +1614,7 @@ export default function StaffDashboard() {
                       ].map((item) => (
                         <label
                           key={item}
-                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                          className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                         >
                           <input
                             type="checkbox"
@@ -1594,7 +1623,9 @@ export default function StaffDashboard() {
                               toggleValue(item, mobility, setMobility)
                             }
                           />
-                          <span className="text-white text-[14px]">{item}</span>
+                          <span className="text-black dark:text-white text-[14px]">
+                            {item}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -1602,12 +1633,12 @@ export default function StaffDashboard() {
                       value={mobilityNotes}
                       onChange={(e) => setMobilityNotes(e.target.value)}
                       placeholder="Mobility notes..."
-                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                      className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                     />
                   </div>
                   {/* Medication Prompts & Health Observations */}
-                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                  <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                       Medication Prompts & Health Observations
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -1625,7 +1656,7 @@ export default function StaffDashboard() {
                       ].map((item) => (
                         <label
                           key={item}
-                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                          className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                         >
                           <input
                             type="checkbox"
@@ -1634,7 +1665,9 @@ export default function StaffDashboard() {
                               toggleValue(item, medication, setMedication)
                             }
                           />
-                          <span className="text-white text-[14px]">{item}</span>
+                          <span className="text-black dark:text-white text-[14px]">
+                            {item}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -1642,12 +1675,12 @@ export default function StaffDashboard() {
                       value={medicationNotes}
                       onChange={(e) => setMedicationNotes(e.target.value)}
                       placeholder="Medication/health notes..."
-                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                      className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                     />
                   </div>
                   {/* Privacy, Respect & Independence Review */}
-                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                  <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                       Privacy, Respect & Independence Review
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -1664,7 +1697,7 @@ export default function StaffDashboard() {
                       ].map((item) => (
                         <label
                           key={item}
-                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                          className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                         >
                           <input
                             type="checkbox"
@@ -1673,7 +1706,9 @@ export default function StaffDashboard() {
                               toggleValue(item, privacyReview, setPrivacyReview)
                             }
                           />
-                          <span className="text-white text-[14px]">{item}</span>
+                          <span className="text-black dark:text-white text-[14px]">
+                            {item}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -1681,12 +1716,12 @@ export default function StaffDashboard() {
                       value={privacyReviewNotes}
                       onChange={(e) => setPrivacyReviewNotes(e.target.value)}
                       placeholder="Privacy/respect notes..."
-                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                      className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                     />
                   </div>
                   {/* Personal Support & Comfort Review */}
-                  <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-                    <h3 className="text-[20px] font-semibold text-white mb-5">
+                  <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-gray-100 dark:bg-[#0b1018] p-5 mb-6">
+                    <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                       Personal Support & Comfort Review
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -1701,7 +1736,7 @@ export default function StaffDashboard() {
                       ].map((item) => (
                         <label
                           key={item}
-                          className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                          className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-50 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                         >
                           <input
                             type="checkbox"
@@ -1714,7 +1749,9 @@ export default function StaffDashboard() {
                               )
                             }
                           />
-                          <span className="text-white text-[14px]">{item}</span>
+                          <span className="text-black dark:text-white text-[14px]">
+                            {item}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -1722,7 +1759,7 @@ export default function StaffDashboard() {
                       value={personalSupportNotes}
                       onChange={(e) => setPersonalSupportNotes(e.target.value)}
                       placeholder="Personal support notes..."
-                      className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                      className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
                     />
                   </div>
                   {/* Safeguarding Review */}
@@ -1764,10 +1801,10 @@ export default function StaffDashboard() {
                 </>
               )}
               <div className="h-[40px]" />
-              <div className="flex flex-col sm:flex-row justify-end gap-4 sticky bottom-0 left-0 right-0 bg-[#060b12] pt-4 pb-2 border-t border-white/[0.06] mt-6">
+              <div className="flex flex-col sm:flex-row justify-end gap-4 sticky bottom-0 left-0 right-0 bg-white dark:bg-[#060b12] pt-4 pb-2 border-t border-black/10 dark:border-white/[0.06] mt-6">
                 <button
                   onClick={() => setShowCheckinModal(false)}
-                  className="h-[54px] px-7 rounded-[16px] border border-[#1d3248] bg-[#0d1722] text-white font-medium"
+                  className="h-[54px] px-7 rounded-[16px] border border-black/10 dark:border-[#1d3248] bg-gray-100 dark:bg-[#0d1722] text-black dark:text-white font-medium"
                 >
                   Cancel
                 </button>

@@ -109,7 +109,7 @@ export default function StaffClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050a11] text-white">
+      <div className="min-h-screen bg-white dark:bg-[#050a11] text-black dark:text-white transition-colors duration-300">
         <Navbar name={staffName} role={staffRole} />
         <StaffSidebar onLogout={handleLogout} />
         <div className="pt-32 pl-[290px] pr-6 pb-6">Loading...</div>
@@ -117,14 +117,14 @@ export default function StaffClient() {
     );
   }
   return (
-    <div className="min-h-screen bg-[#050a11] text-white">
+    <div className="min-h-screen bg-white dark:bg-[#050a11] text-black dark:text-white transition-colors duration-300">
       <Navbar name={staffName} role={staffRole} />
 
       <StaffSidebar onLogout={handleLogout} />
 
       <div className="pt-32 pl-[290px] pr-6 pb-6">
         <div className="w-full space-y-6">
-          <div className="rounded-3xl bg-[#11161d] border border-white/10 p-8 shadow-2xl">
+          <div className="rounded-3xl bg-white dark:bg-[#11161d] border border-black/10 dark:border-white/10 p-8 shadow-2xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <p className="text-sky-300 text-sm uppercase tracking-wider">
@@ -144,13 +144,13 @@ export default function StaffClient() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-[#11161d] border border-white/10 p-8 shadow-xl">
+          <div className="rounded-3xl bg-white dark:bg-[#11161d] border border-black/10 dark:border-white/10 p-8 shadow-xl">
             {!patientDetails ? (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-semibold mb-2">
                   No Patient Assigned
                 </h2>
-                <p className="text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   You do not have a patient assigned for today's shift.
                 </p>
               </div>
@@ -241,8 +241,8 @@ export default function StaffClient() {
 
 function Info({ label, value }: { label: string; value: any }) {
   return (
-    <div className="rounded-xl bg-[#0b1018] border border-white/10 p-4">
-      <p className="text-xs text-gray-400">{label}</p>
+    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-4">
+      <p className="text-xs text-gray-600 dark:text-gray-400">{label}</p>
       <p className="mt-1">{value || "-"}</p>
     </div>
   );
@@ -250,7 +250,7 @@ function Info({ label, value }: { label: string; value: any }) {
 
 function TextCard({ title, value }: { title: string; value: any }) {
   return (
-    <div className="rounded-xl bg-[#0b1018] border border-white/10 p-4">
+    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-4">
       <p className="text-sky-300 mb-2">{title}</p>
       <p>{value || "-"}</p>
     </div>

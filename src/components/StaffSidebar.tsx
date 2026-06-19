@@ -3,8 +3,7 @@ import {
   User,
   Clock3,
   ClipboardCheck,
-  NotebookText,
-  Bell,
+  AlertTriangle,
   Settings,
   LogOut,
   Menu,
@@ -15,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 import carelogo from "../assets/carelogo.png";
+import carelogoLight from "../assets/carelogo-light.png";
 
 type SidebarProps = {
   onLogout: () => void;
@@ -28,9 +28,9 @@ export default function Sidebar({ onLogout }: SidebarProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="lg:hidden fixed top-4 left-4 z-[60] w-11 h-11 rounded-xl bg-[#04070d] border border-white/[0.08] flex items-center justify-center"
+          className="lg:hidden fixed top-4 left-4 z-[60] w-11 h-11 rounded-xl bg-white dark:bg-[#04070d] border border-black/10 dark:border-white/[0.08] flex items-center justify-center"
         >
-          <Menu className="text-white" size={22} />
+          <Menu className="text-black dark:text-white" size={22} />
         </button>
       )}
 
@@ -42,7 +42,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen w-[245px] bg-[#04070d] border-r border-white/[0.04] flex flex-col justify-between z-50 overflow-hidden transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-screen w-[245px] bg-white dark:bg-[#04070d] border-r border-black/10 dark:border-white/[0.04] flex flex-col justify-between z-50 overflow-hidden transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
@@ -50,14 +50,22 @@ export default function Sidebar({ onLogout }: SidebarProps) {
         <div>
           {/* LOGO */}
           <div className="px-5 pt-5 pb-6 flex items-center justify-between gap-4">
-            <img
-              src={carelogo}
-              alt="Care Logo"
-              className="w-[150px] object-contain"
-            />
+            <>
+              <img
+                src={carelogoLight}
+                alt="Care Logo"
+                className="w-[150px] object-contain block dark:hidden"
+              />
+
+              <img
+                src={carelogo}
+                alt="Care Logo"
+                className="w-[150px] object-contain hidden dark:block"
+              />
+            </>
             <button
               onClick={() => setOpen(false)}
-              className="lg:hidden text-white"
+              className="lg:hidden text-black dark:text-white"
             >
               <X size={22} />
             </button>
@@ -68,14 +76,14 @@ export default function Sidebar({ onLogout }: SidebarProps) {
             {/* ACTIVE */}
             <button
               onClick={() => navigate("/staff-dashboard")}
-              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
             >
               <LayoutDashboard
                 size={18}
                 strokeWidth={2}
-                className="text-[#c8d1dc]"
+                className="text-gray-700 dark:text-[#c8d1dc]"
               />
-              <span className="text-[15px] font-medium text-[#eef2f7]">
+              <span className="text-[15px] font-medium text-gray-900 dark:text-[#eef2f7]">
                 Dashboard
               </span>
             </button>
@@ -86,73 +94,95 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                 setOpen(false);
                 navigate("/staff-client");
               }}
-              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
             >
-              <User size={18} strokeWidth={2} className="text-[#c8d1dc]" />
+              <User
+                size={18}
+                strokeWidth={2}
+                className="text-gray-700 dark:text-[#c8d1dc]"
+              />
 
-              <span className="text-[14px] text-[#eef2f7]">My Client</span>
+              <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
+                My Client
+              </span>
             </button>
 
             <button
               onClick={() => navigate("/hourly-check")}
-              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
             >
-              <Clock3 size={18} strokeWidth={2.2} className="text-[#c8d1dc]" />
+              <Clock3
+                size={18}
+                strokeWidth={2.2}
+                className="text-gray-700 dark:text-[#c8d1dc]"
+              />
 
-              <span className="text-[14px] text-[#c8d1dc] font-medium">
+              <span className="text-[14px] text-gray-700 dark:text-[#eef2f7] font-medium">
                 Hourly Check-ins
               </span>
             </button>
 
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
-              <Bell size={18} strokeWidth={2} className="text-[#c8d1dc]" />
-
-              <span className="text-[14px] text-[#eef2f7]">Notifications</span>
-
-              <div className="ml-auto w-6 h-6 rounded-full bg-[#1f6ed4] flex items-center justify-center text-[10px] font-semibold text-white">
-                2
-              </div>
-            </button>
-
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
+            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300">
               <ClipboardCheck
                 size={18}
                 strokeWidth={2}
-                className="text-[#c8d1dc]"
+                className="text-gray-700 dark:text-[#c8d1dc]"
               />
 
-              <span className="text-[14px] text-[#eef2f7]">Handover</span>
+              <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
+                Handover
+              </span>
             </button>
 
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
-              <NotebookText
+            <button
+              onClick={() => {
+                setOpen(false);
+                navigate("/staff-incidents");
+              }}
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
+            >
+              <AlertTriangle
                 size={18}
                 strokeWidth={2}
-                className="text-[#c8d1dc]"
+                className="text-gray-700 dark:text-[#c8d1dc]"
               />
 
-              <span className="text-[14px] text-[#eef2f7]">My Notes</span>
+              <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
+                Incidents
+              </span>
             </button>
 
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300">
-              <Settings size={18} strokeWidth={2} className="text-[#c8d1dc]" />
+            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300">
+              <Settings
+                size={18}
+                strokeWidth={2}
+                className="text-gray-700 dark:text-[#c8d1dc]"
+              />
 
-              <span className="text-[14px] text-[#eef2f7]">Settings</span>
+              <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
+                Settings
+              </span>
             </button>
           </nav>
         </div>
 
         {/* BOTTOM */}
         <div className="px-4 pb-4">
-          <div className="h-px bg-white/[0.06] mb-5" />
+          <div className="h-px bg-black/10 dark:bg-white/[0.06] mb-5" />
 
           <button
             onClick={onLogout}
-            className="w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-white/[0.03] transition-all duration-300"
+            className="w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
           >
-            <LogOut size={18} strokeWidth={2} className="text-[#c8d1dc]" />
+            <LogOut
+              size={18}
+              strokeWidth={2}
+              className="text-gray-700 dark:text-[#c8d1dc]"
+            />
 
-            <span className="text-[14px] text-white">Log out</span>
+            <span className="text-[14px] text-black dark:text-white">
+              Log out
+            </span>
           </button>
         </div>
       </aside>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Bell,
   Users,
   UserPlus,
   ClipboardList,
@@ -19,6 +18,7 @@ export default function AdminDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [adminName, setAdminName] = useState("");
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -38,6 +38,14 @@ export default function AdminDashboard() {
   const today = new Date().toISOString().split("T")[0];
 
   const todayShifts = shiftList.filter((shift) => shift.shift_date === today);
+
+  const activeShifts = todayShifts.filter(
+    (shift) => (shift.status || "").toLowerCase() === "active",
+  );
+
+  const completedShifts = todayShifts.filter(
+    (shift) => (shift.status || "").toLowerCase() === "completed",
+  );
 
   useEffect(() => {
     checkAdminAccess();
@@ -66,9 +74,12 @@ export default function AdminDashboard() {
       }
 
       setAdminName(profile.full_name || "Admin");
+      setOrganizationId(profile.organization_id || null);
+      // Only get profiles belonging to this admin's organization
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, full_name, role")
+        .eq("organization_id", profile.organization_id)
         .order("full_name", { ascending: true });
 
       if (profilesError) {
@@ -87,9 +98,11 @@ export default function AdminDashboard() {
       setStaffList(staffProfiles);
       setPatientList(patientProfiles);
 
+      // Only get shifts belonging to this admin's organization
       const { data: shifts, error: shiftsError } = await supabase
         .from("shifts")
         .select("*")
+        .eq("organization_id", profile.organization_id)
         .order("shift_date", { ascending: false })
         .order("start_time", { ascending: false });
 
@@ -99,9 +112,11 @@ export default function AdminDashboard() {
         setShiftList(shifts || []);
       }
 
+      // Only count checkins belonging to this admin's organization
       const { count: totalCheckins, error: checkinsError } = await supabase
         .from("checkins")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", profile.organization_id);
 
       if (checkinsError) {
         console.error(checkinsError);
@@ -147,6 +162,10 @@ export default function AdminDashboard() {
 
   const createShift = async () => {
     try {
+      if (!organizationId) {
+        alert("No organization assigned to this admin");
+        return;
+      }
       const staff = staffList.find((s) => s.id === selectedStaff);
       const patient = patientList.find((p) => p.id === selectedPatient);
 
@@ -177,6 +196,7 @@ export default function AdminDashboard() {
         start_time: shiftStart,
         end_time: shiftEnd,
         status: shiftStatus,
+        organization_id: organizationId,
       });
 
       if (error) {
@@ -199,6 +219,21 @@ export default function AdminDashboard() {
   };
   const createUser = async () => {
     try {
+      if (!organizationId) {
+        alert("No organization assigned to this admin");
+        return;
+      }
+
+      const { count: organizationUsers } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId);
+
+      if ((organizationUsers || 0) >= 5) {
+        alert("User limit reached. This organisation can only have 5 users.");
+        return;
+      }
+
       const session = await supabase.auth.getSession();
 
       if (!session.data.session) {
@@ -214,11 +249,13 @@ export default function AdminDashboard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.data.session.access_token}`,
           },
+          // Pass the logged-in admin's organization_id so the Edge Function can save it on the new profile record.
           body: JSON.stringify({
             full_name: newName,
             email: newEmail,
             password: newPassword,
             role: newRole,
+            organization_id: organizationId,
           }),
         },
       );
@@ -246,22 +283,37 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white">
-        Loading admin dashboard...
+      <div className="min-h-screen bg-white dark:bg-[#03060b] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
+            <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+          </div>
+
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-black dark:text-white mb-2">
+              Preparing Dashboard
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading staff, shifts and system data...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#03060b] text-white flex overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#03060b] text-black dark:text-white flex overflow-x-hidden transition-colors duration-300">
       <Sidebar onLogout={handleLogout} />
       {/* MAIN CONTENT */}
-      <div className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden lg:ml-[245px] min-h-screen bg-[#03060b] pt-[78px]">
+      <div className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden lg:ml-[245px] min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px]">
         <Navbar name={adminName} />
         {/* CONTENT */}
         <main className="w-full p-3 sm:p-5 lg:p-7 overflow-hidden">
           {/* HERO */}
-          <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6 mb-6">
+          <div className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6 mb-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-5">
                 <div className="w-24 h-24 rounded-full bg-sky-400/10 border border-sky-400/20 flex items-center justify-center">
@@ -277,36 +329,38 @@ export default function AdminDashboard() {
                     Active
                   </h2>
 
-                  <p className="text-gray-500 text-[13px] mt-2">
+                  <p className="text-gray-600 dark:text-gray-500 text-[13px] mt-2">
                     All systems operational
                   </p>
                 </div>
               </div>
 
-              <div className="lg:border-l lg:border-white/10 lg:px-8">
+              <div className="lg:border-l lg:border-black/10 dark:lg:border-white/10 lg:px-8">
                 <div className="w-20 h-20 rounded-full bg-emerald-300/10 border border-emerald-300/20 flex items-center justify-center mb-4">
                   <Users size={34} className="text-emerald-300" />
                 </div>
 
-                <p className="text-gray-500 text-[13px] mb-1.5">
+                <p className="text-gray-600 dark:text-gray-500 text-[13px] mb-1.5">
                   Total Active Staff
                 </p>
 
                 <h2 className="text-[30px] font-semibold leading-none text-emerald-300">
-                  24
+                  {staffList.length}
                 </h2>
               </div>
 
-              <div className="lg:border-l lg:border-white/10 lg:px-8">
+              <div className="lg:border-l lg:border-black/10 dark:lg:border-white/10 lg:px-8">
                 <div className="w-20 h-20 rounded-full bg-sky-400/10 border border-sky-400/20 flex items-center justify-center mb-4">
                   <Clock3 size={34} className="text-sky-300" />
                 </div>
 
-                <p className="text-gray-500 text-[13px] mb-1.5">
+                <p className="text-gray-600 dark:text-gray-500 text-[13px] mb-1.5">
                   Active Check-ins
                 </p>
 
-                <h2 className="text-[30px] font-semibold leading-none">87</h2>
+                <h2 className="text-[30px] font-semibold leading-none">
+                  {checkinCount}
+                </h2>
               </div>
             </div>
           </div>
@@ -318,7 +372,7 @@ export default function AdminDashboard() {
               {/* CREATE USER */}
               <div
                 id="create-account-section"
-                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+                className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
@@ -326,7 +380,7 @@ export default function AdminDashboard() {
                       Create Account
                     </h2>
 
-                    <p className="text-gray-500 text-[13px]">
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px]">
                       Create staff and patient accounts securely.
                     </p>
                   </div>
@@ -342,7 +396,7 @@ export default function AdminDashboard() {
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Full Name"
-                    className="w-full h-[50px] rounded-[16px] border border-white/10 bg-[#11161d]/90 px-4 text-white outline-none"
+                    className="w-full h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/90 px-4 text-black dark:text-white outline-none"
                   />
 
                   <input
@@ -350,7 +404,7 @@ export default function AdminDashboard() {
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="Email Address"
-                    className="w-full h-[50px] rounded-[16px] border border-white/10 bg-[#11161d]/90 px-4 text-white outline-none"
+                    className="w-full h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/90 px-4 text-black dark:text-white outline-none"
                   />
 
                   <input
@@ -358,13 +412,13 @@ export default function AdminDashboard() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Temporary Password"
-                    className="w-full h-[50px] rounded-[16px] border border-white/10 bg-[#11161d]/90 px-4 text-white outline-none"
+                    className="w-full h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/90 px-4 text-black dark:text-white outline-none"
                   />
 
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
-                    className="w-full h-[50px] rounded-[16px] border border-white/10 bg-[#11161d]/90 px-4 text-white outline-none"
+                    className="w-full h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/90 px-4 text-black dark:text-white outline-none"
                   >
                     <option value="staff">Staff</option>
                     <option value="patient">Patient</option>
@@ -381,13 +435,13 @@ export default function AdminDashboard() {
 
               <div
                 id="create-shift-section"
-                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+                className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6"
               >
                 <h2 className="text-[20px] sm:text-[24px] font-semibold mb-6">
                   Create Shift
                 </h2>
 
-                <p className="text-gray-400 text-sm mb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Select a staff member, patient, date and shift times using the
                   calendar and time pickers below.
                 </p>
@@ -396,7 +450,7 @@ export default function AdminDashboard() {
                   <select
                     value={selectedStaff}
                     onChange={(e) => setSelectedStaff(e.target.value)}
-                    className="h-[50px] rounded-[16px] border border-white/10 bg-[#11161d] px-4"
+                    className="h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d] px-4"
                   >
                     <option value="">Select Staff</option>
                     {staffList.map((staff) => (
@@ -409,7 +463,7 @@ export default function AdminDashboard() {
                   <select
                     value={selectedPatient}
                     onChange={(e) => setSelectedPatient(e.target.value)}
-                    className="h-[50px] rounded-[16px] border border-white/10 bg-[#11161d] px-4"
+                    className="h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d] px-4"
                   >
                     <option value="">Select Patient</option>
                     {patientList.map((patient) => (
@@ -420,7 +474,7 @@ export default function AdminDashboard() {
                   </select>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                       Shift Date
                     </label>
                     <input
@@ -439,12 +493,12 @@ export default function AdminDashboard() {
                         };
                         input.showPicker?.();
                       }}
-                      className="w-full h-[56px] rounded-[16px] border border-sky-400/30 bg-[#11161d] px-4 text-sky-300 font-semibold [color-scheme:dark] cursor-pointer"
+                      className="w-full h-[56px] rounded-[16px] border border-sky-400/30 bg-gray-100 dark:bg-[#11161d] px-4 text-black dark:text-sky-300 font-semibold cursor-pointer dark:[color-scheme:dark] [color-scheme:light]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                       Start Time
                     </label>
                     <input
@@ -463,12 +517,12 @@ export default function AdminDashboard() {
                         };
                         input.showPicker?.();
                       }}
-                      className="w-full h-[56px] rounded-[16px] border border-emerald-300/30 bg-[#11161d] px-4 text-emerald-300 font-semibold [color-scheme:dark] cursor-pointer"
+                      className="w-full h-[56px] rounded-[16px] border border-emerald-300/30 bg-gray-100 dark:bg-[#11161d] px-4 text-black dark:text-emerald-300 font-semibold cursor-pointer dark:[color-scheme:dark] [color-scheme:light]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                       End Time
                     </label>
                     <input
@@ -487,7 +541,7 @@ export default function AdminDashboard() {
                         };
                         input.showPicker?.();
                       }}
-                      className="w-full h-[56px] rounded-[16px] border border-yellow-400/30 bg-[#11161d] px-4 text-yellow-300 font-semibold [color-scheme:dark] cursor-pointer"
+                      className="w-full h-[56px] rounded-[16px] border border-yellow-400/30 bg-gray-100 dark:bg-[#11161d] px-4 text-black dark:text-yellow-300 font-semibold cursor-pointer dark:[color-scheme:dark] [color-scheme:light]"
                     />
                   </div>
                 </div>
@@ -503,7 +557,7 @@ export default function AdminDashboard() {
               {/* SHIFTS LIST */}
               <div
                 id="all-shifts-section"
-                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+                className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6"
               >
                 <h2 className="text-[20px] sm:text-[24px] font-semibold mb-6">
                   All Shifts
@@ -511,7 +565,9 @@ export default function AdminDashboard() {
 
                 <div className="space-y-4">
                   {shiftList.length === 0 && (
-                    <p className="text-gray-500">No shifts created yet</p>
+                    <p className="text-gray-600 dark:text-gray-500">
+                      No shifts created yet
+                    </p>
                   )}
 
                   {shiftList.map((shift) => {
@@ -526,51 +582,55 @@ export default function AdminDashboard() {
                     return (
                       <div
                         key={shift.id}
-                        className="rounded-[20px] border border-white/10 bg-[#0c1118] p-5 sm:p-6"
+                        className="rounded-[20px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#0c1118] p-5 sm:p-6"
                       >
                         <div className="space-y-5">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-black/10 dark:border-white/10 pb-4">
                             <div>
-                              <h3 className="text-white text-[20px] font-semibold">
+                              <h3 className="text-black dark:text-white text-[20px] font-semibold">
                                 {formattedDate}
                               </h3>
-                              <p className="text-gray-500 text-sm mt-1">
+                              <p className="text-gray-600 dark:text-gray-500 text-sm mt-1">
                                 Scheduled Care Shift
                               </p>
                             </div>
                             <div className="text-left sm:text-right space-y-1">
                               <p className="text-sky-300 font-medium">
-                                <span className="text-gray-400">Staff:</span>{" "}
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  Staff:
+                                </span>{" "}
                                 {shift.staff_name}
                               </p>
                               <p className="text-emerald-300 text-sm">
-                                <span className="text-gray-400">Patient:</span>{" "}
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  Patient:
+                                </span>{" "}
                                 {shift.patient_name}
                               </p>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="rounded-[14px] border border-[#1e3a52] bg-[#0d1722] px-4 py-3">
+                            <div className="rounded-[14px] border border-blue-200 dark:border-[#1e3a52] bg-blue-50 dark:bg-[#0d1722] px-4 py-3">
                               <p className="text-[#79bbff] text-[12px] uppercase mb-1">
                                 Shift Time
                               </p>
-                              <p className="text-white font-semibold">
+                              <p className="text-black dark:text-white font-semibold">
                                 {shift.start_time} - {shift.end_time}
                               </p>
                             </div>
-                            <div className="rounded-[14px] border border-[#3b3520] bg-[#1a160d] px-4 py-3">
+                            <div className="rounded-[14px] border border-yellow-200 dark:border-[#3b3520] bg-yellow-50 dark:bg-[#1a160d] px-4 py-3">
                               <p className="text-[#ffd15c] text-[12px] uppercase mb-1">
                                 Status
                               </p>
-                              <p className="text-white font-semibold capitalize">
+                              <p className="text-black dark:text-white font-semibold capitalize">
                                 {(shift.status || "unknown").replaceAll(
                                   "_",
                                   " ",
                                 )}
                               </p>
                             </div>
-                            <div className="rounded-[14px] border border-[#1f3f2f] bg-[#101a14] px-4 py-3">
+                            <div className="rounded-[14px] border border-green-200 dark:border-[#1f3f2f] bg-green-50 dark:bg-[#101a14] px-4 py-3">
                               <p className="text-[#9eff5b] text-[12px] uppercase mb-1">
                                 Handover
                               </p>
@@ -600,17 +660,17 @@ export default function AdminDashboard() {
               {/* SUMMARY */}
               <div
                 id="summary-section"
-                className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6"
+                className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6"
               >
                 <h2 className="text-[20px] font-semibold mb-6">
                   Today's Summary
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="rounded-[16px] border border-white/10 bg-[#11161d]/80 p-5 text-center">
+                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
                     <Users className="mx-auto mb-4 text-sky-300" />
 
-                    <p className="text-gray-500 text-[13px] text-[12px] mb-1.5">
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
                       Staff
                     </p>
 
@@ -619,10 +679,10 @@ export default function AdminDashboard() {
                     </h3>
                   </div>
 
-                  <div className="rounded-[16px] border border-white/10 bg-[#11161d]/80 p-5 text-center">
+                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
                     <ClipboardList className="mx-auto mb-4 text-emerald-300" />
 
-                    <p className="text-gray-500 text-[13px] text-[12px] mb-1.5">
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
                       Check-ins
                     </p>
 
@@ -631,41 +691,34 @@ export default function AdminDashboard() {
                     </h3>
                   </div>
 
-                  <div className="rounded-[16px] border border-white/10 bg-[#11161d]/80 p-5 text-center">
-                    <Bell className="mx-auto mb-4 text-yellow-400" />
+                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
+                    <Clock3 className="mx-auto mb-4 text-yellow-400" />
 
-                    <p className="text-gray-500 text-[13px] text-[12px] mb-1.5">
-                      Alerts
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
+                      Active Shifts
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      {todayShifts.filter((s) => !s.handover_completed).length}
+                      {activeShifts.length}
                     </h3>
                   </div>
 
-                  <div className="rounded-[16px] border border-white/10 bg-[#11161d]/80 p-5 text-center">
+                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
                     <ShieldCheck className="mx-auto mb-4 text-red-400" />
 
-                    <p className="text-gray-500 text-[13px] text-[12px] mb-1.5">
-                      Compliance
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
+                      Completed Shifts
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      {todayShifts.length === 0
-                        ? "100%"
-                        : `${Math.round(
-                            (todayShifts.filter((s) => s.handover_completed)
-                              .length /
-                              todayShifts.length) *
-                              100,
-                          )}%`}
+                      {completedShifts.length}
                     </h3>
                   </div>
                 </div>
               </div>
 
               {/* QUICK ACTIONS */}
-              <div className="rounded-[20px] sm:rounded-[24px] border border-white/10 bg-[#070c14] p-4 sm:p-6">
+              <div className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6">
                 <h2 className="text-[20px] font-semibold mb-6">
                   Quick Actions
                 </h2>
@@ -673,7 +726,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={scrollToCreateAccount}
-                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-sky-400/30 transition-all duration-300"
+                    className="h-[100px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-sky-400/30 transition-all duration-300"
                   >
                     <UserPlus className="text-sky-300" />
                     Add Staff
@@ -681,23 +734,17 @@ export default function AdminDashboard() {
 
                   <button
                     onClick={scrollToShifts}
-                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-emerald-300/30 transition-all duration-300"
+                    className="h-[100px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-emerald-300/30 transition-all duration-300"
                   >
                     <ClipboardList className="text-emerald-300" />
                     View Shifts
                   </button>
 
-                  <button
-                    onClick={scrollToSummary}
-                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-yellow-400/30 transition-all duration-300"
-                  >
-                    <Bell className="text-yellow-400" />
-                    Notifications
-                  </button>
+                  {/* Notifications button removed as per instructions */}
 
                   <button
                     onClick={scrollToCreateShift}
-                    className="h-[100px] rounded-[16px] border border-white/10 bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-red-400/30 transition-all duration-300"
+                    className="h-[100px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 flex flex-col items-center justify-center gap-3 hover:border-red-400/30 transition-all duration-300"
                   >
                     <FileText className="text-red-400" />
                     Reports

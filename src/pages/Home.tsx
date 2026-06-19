@@ -15,11 +15,11 @@ export default function Home() {
   const [selectedLogin, setSelectedLogin] = useState("staff");
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
+    <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white overflow-hidden transition-colors duration-300">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.15),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(134,239,172,0.12),transparent_30%)]" />
 
       <div className="relative z-10">
-        <header className="relative z-[100] h-20 border-b border-white/10 backdrop-blur-sm bg-black/80 flex items-center">
+        <header className="relative z-[100] h-20 border-b border-black/10 dark:border-white/10 backdrop-blur-sm bg-white/80 dark:bg-black/80 flex items-center">
           <div className="max-w-7xl w-full mx-auto px-6 flex items-center justify-between">
             <div className="flex items-center">
               <img
@@ -38,23 +38,23 @@ export default function Home() {
               </button>
 
               {showLoginMenu && (
-                <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-[90px] sm:top-full sm:mt-4 sm:w-[520px] max-h-[80vh] overflow-y-auto rounded-[20px] sm:rounded-[24px] border border-sky-400/20 bg-[#0d1117] p-4 sm:p-5 shadow-2xl shadow-sky-500/20 z-[999] backdrop-blur-xl">
-                  <h3 className="text-sky-300 text-sm font-semibold tracking-[0.2em] uppercase mb-6 border-b border-white/10 pb-4">
+                <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-[90px] sm:top-full sm:mt-4 sm:w-[520px] max-h-[80vh] overflow-y-auto rounded-[20px] sm:rounded-[24px] border border-sky-400/20 bg-white dark:bg-[#0d1117] p-4 sm:p-5 shadow-2xl shadow-sky-500/20 z-[999] backdrop-blur-xl">
+                  <h3 className="text-sky-300 text-sm font-semibold tracking-[0.2em] uppercase mb-6 border-b border-black/10 dark:border-white/10 pb-4">
                     Sign In
                   </h3>
 
                   <div className="space-y-5">
                     <button
                       onClick={() => setSelectedLogin("staff")}
-                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-gray-100 dark:bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "staff"
                           ? "border-sky-400/40"
-                          : "border-white/10"
+                          : "border-black/10 dark:border-white/10"
                       }`}
                     >
                       <div className="flex items-start gap-3 sm:gap-5">
                         <div
-                          className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
+                          className={`mt-1 w-7 h-7 rounded-full bg-white dark:bg-[#0d1117] ${
                             selectedLogin === "staff"
                               ? "border-[4px] border-sky-500"
                               : "border-[1px] border-gray-500"
@@ -62,11 +62,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-black dark:text-white mb-2">
                             Staff Login
                           </h4>
 
-                          <p className="text-gray-400 text-sm sm:text-base leading-6">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-6">
                             Access hourly check-ins, documentation, shift
                             handovers and daily care workflows.
                           </p>
@@ -76,15 +76,15 @@ export default function Home() {
 
                     <button
                       onClick={() => setSelectedLogin("admin")}
-                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-gray-100 dark:bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "admin"
                           ? "border-emerald-300/40"
-                          : "border-white/10"
+                          : "border-black/10 dark:border-white/10"
                       }`}
                     >
                       <div className="flex items-start gap-3 sm:gap-5">
                         <div
-                          className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
+                          className={`mt-1 w-7 h-7 rounded-full bg-white dark:bg-[#0d1117] ${
                             selectedLogin === "admin"
                               ? "border-[4px] border-emerald-400"
                               : "border-[1px] border-gray-500"
@@ -92,11 +92,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-black dark:text-white mb-2">
                             Admin Login
                           </h4>
 
-                          <p className="text-gray-400 text-sm sm:text-base leading-6">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-6">
                             Manage employees, clients, compliance tracking and
                             organisation settings.
                           </p>
@@ -106,15 +106,15 @@ export default function Home() {
 
                     <button
                       onClick={() => setSelectedLogin("patient")}
-                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
+                      className={`w-full rounded-[16px] sm:rounded-[20px] border bg-gray-100 dark:bg-[#111827] p-4 sm:p-5 text-left transition-all duration-300 hover:scale-[1.01] ${
                         selectedLogin === "patient"
                           ? "border-sky-400/40"
-                          : "border-white/10"
+                          : "border-black/10 dark:border-white/10"
                       }`}
                     >
                       <div className="flex items-start gap-3 sm:gap-5">
                         <div
-                          className={`mt-1 w-7 h-7 rounded-full bg-[#0d1117] ${
+                          className={`mt-1 w-7 h-7 rounded-full bg-white dark:bg-[#0d1117] ${
                             selectedLogin === "patient"
                               ? "border-[4px] border-sky-500"
                               : "border-[1px] border-gray-500"
@@ -122,11 +122,11 @@ export default function Home() {
                         />
 
                         <div>
-                          <h4 className="text-lg sm:text-2xl font-bold text-white mb-2">
+                          <h4 className="text-lg sm:text-2xl font-bold text-black dark:text-white mb-2">
                             Patient Login
                           </h4>
 
-                          <p className="text-gray-400 text-sm sm:text-base leading-6">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-6">
                             View care updates, wellbeing records and
                             communication securely.
                           </p>
@@ -176,7 +176,7 @@ export default function Home() {
                 <ChevronRight size={18} />
               </button>
 
-              <button className="px-7 py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 font-medium">
+              <button className="px-7 py-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 font-medium">
                 View Features
               </button>
             </div>
@@ -186,7 +186,7 @@ export default function Home() {
             <div className="absolute -top-10 -right-10 w-44 h-44 bg-sky-400/20 blur-3xl rounded-full" />
             <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-emerald-300/20 blur-3xl rounded-full" />
 
-            <div className="relative rounded-3xl border border-white/10 bg-[#0d1117] p-6 shadow-2xl shadow-sky-500/10 backdrop-blur-xl">
+            <div className="relative rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-6 shadow-2xl shadow-sky-500/10 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <p className="text-gray-400 text-sm">Assigned Client</p>
@@ -199,13 +199,13 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="rounded-2xl bg-black/40 border border-white/5 p-5">
+                <div className="rounded-2xl bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/5 p-5">
                   <Clock3 className="text-sky-400 mb-3" size={24} />
                   <p className="text-gray-400 text-sm">Next Check-In</p>
                   <h4 className="text-2xl font-bold mt-1">12:00 PM</h4>
                 </div>
 
-                <div className="rounded-2xl bg-black/40 border border-white/5 p-5">
+                <div className="rounded-2xl bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/5 p-5">
                   <ShieldCheck className="text-emerald-300 mb-3" size={24} />
                   <p className="text-gray-400 text-sm">Compliance</p>
                   <h4 className="text-2xl font-bold mt-1">98%</h4>
@@ -213,7 +213,7 @@ export default function Home() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-2xl bg-black/40 border border-white/5 p-5 flex items-center justify-between">
+                <div className="rounded-2xl bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/5 p-5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-sky-400/10 flex items-center justify-center text-sky-400">
                       <FileText size={22} />
@@ -232,7 +232,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-black/40 border border-white/5 p-5 flex items-center justify-between">
+                <div className="rounded-2xl bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/5 p-5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-emerald-300/10 flex items-center justify-center text-emerald-300">
                       <Bell size={22} />
@@ -257,40 +257,40 @@ export default function Home() {
 
         <section className="max-w-7xl mx-auto px-6 pb-20">
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="rounded-3xl border border-white/10 bg-[#0d1117] p-7 hover:border-sky-400/30 transition-all duration-300">
+            <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-7 hover:border-sky-400/30 transition-all duration-300">
               <div className="w-14 h-14 rounded-2xl bg-sky-400/10 text-sky-400 flex items-center justify-center mb-5">
                 <Clock3 size={28} />
               </div>
 
               <h3 className="text-2xl font-bold mb-3">Hourly Check-Ins</h3>
 
-              <p className="text-gray-400 leading-7">
+              <p className="text-gray-600 dark:text-gray-400 leading-7">
                 Secure timestamped hourly documentation with automatic late
                 entry tracking.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#0d1117] p-7 hover:border-emerald-300/30 transition-all duration-300">
+            <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-7 hover:border-emerald-300/30 transition-all duration-300">
               <div className="w-14 h-14 rounded-2xl bg-emerald-300/10 text-emerald-300 flex items-center justify-center mb-5">
                 <ShieldCheck size={28} />
               </div>
 
               <h3 className="text-2xl font-bold mb-3">Compliance & Security</h3>
 
-              <p className="text-gray-400 leading-7">
+              <p className="text-gray-600 dark:text-gray-400 leading-7">
                 Protected records, role-based access, and non-editable audit
                 trails for safeguarding.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#0d1117] p-7 hover:border-sky-400/30 transition-all duration-300">
+            <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-7 hover:border-sky-400/30 transition-all duration-300">
               <div className="w-14 h-14 rounded-2xl bg-sky-400/10 text-sky-400 flex items-center justify-center mb-5">
                 <Activity size={28} />
               </div>
 
               <h3 className="text-2xl font-bold mb-3">Real-Time Monitoring</h3>
 
-              <p className="text-gray-400 leading-7">
+              <p className="text-gray-600 dark:text-gray-400 leading-7">
                 Live care updates, wellbeing observations, and shift handovers
                 in one platform.
               </p>
@@ -312,18 +312,18 @@ export default function Home() {
               </span>
             </h2>
 
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-8">
+            <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto leading-8">
               Choose a secure care documentation plan designed for supported
               living, home care, and healthcare teams.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="rounded-3xl border border-white/10 bg-[#0d1117] p-8 relative overflow-hidden">
+            <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-sky-400/10 blur-3xl rounded-full" />
 
               <h3 className="text-2xl font-bold mb-2">Starter</h3>
-              <p className="text-gray-400 mb-8">
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Perfect for small care teams.
               </p>
 
@@ -332,14 +332,14 @@ export default function Home() {
                 <span className="text-gray-400 ml-2">/ month</span>
               </div>
 
-              <div className="space-y-4 text-gray-300 mb-10">
+              <div className="space-y-4 text-gray-700 dark:text-gray-300 mb-10">
                 <div>✓ Minimum 5 Users</div>
                 <div>✓ Invoicing support</div>
                 <div>✓ Staff Login Access</div>
                 <div>✓ Mobile Friendly Dashboard</div>
               </div>
 
-              <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 font-semibold">
+              <button className="w-full py-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 font-semibold">
                 Get Started
               </button>
             </div>
@@ -352,17 +352,19 @@ export default function Home() {
               </div>
 
               <h3 className="text-2xl font-bold mb-2">Professional</h3>
-              <p className="text-gray-300 mb-8">
+              <p className="text-gray-700 dark:text-gray-300 mb-8">
                 Ideal for growing care companies.
               </p>
 
               <div className="mb-8">
                 <span className="text-5xl font-bold">£25.99</span>
-                <span className="text-gray-300 ml-2">/ month</span>
+                <span className="text-gray-700 dark:text-gray-300 ml-2">
+                  / month
+                </span>
               </div>
 
-              <div className="space-y-4 text-gray-200 mb-10">
-                <div className="space-y-4 text-gray-200 mb-10">
+              <div className="space-y-4 text-gray-800 dark:text-gray-200 mb-10">
+                <div className="space-y-4 text-gray-800 dark:text-gray-200 mb-10">
                   <div>✓ Minimum 5 users</div>
                   <div>✓ HR Management System</div>
                   <div>✓ Staff Records & Employee Tracking</div>
@@ -377,11 +379,11 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#0d1117] p-8 relative overflow-hidden">
+            <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0d1117] p-8 relative overflow-hidden">
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-300/10 blur-3xl rounded-full" />
 
               <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
-              <p className="text-gray-400 mb-8">
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Built for large healthcare organisations.
               </p>
 
@@ -389,14 +391,14 @@ export default function Home() {
                 <span className="text-5xl font-bold">Custom</span>
               </div>
 
-              <div className="space-y-4 text-gray-300 mb-10">
+              <div className="space-y-4 text-gray-700 dark:text-gray-300 mb-10">
                 <div>✓ Custom Integrations</div>
                 <div>✓ Dedicated Support</div>
                 <div>✓ Advanced Reporting</div>
                 <div>✓ Enterprise Security</div>
               </div>
 
-              <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 font-semibold">
+              <button className="w-full py-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 font-semibold">
                 Contact Sales
               </button>
             </div>
@@ -404,7 +406,7 @@ export default function Home() {
         </section>
 
         <section className="max-w-7xl mx-auto px-6 pb-28">
-          <div className="relative overflow-hidden rounded-[40px] border border-sky-400/20 bg-gradient-to-br from-sky-400/10 via-[#0d1117] to-emerald-300/10 p-10 md:p-16">
+          <div className="relative overflow-hidden rounded-[40px] border border-sky-400/20 bg-gradient-to-br from-sky-400/10 via-gray-100 dark:via-[#0d1117] to-emerald-300/10 p-10 md:p-16">
             <div className="absolute top-0 left-0 w-72 h-72 bg-sky-400/20 blur-3xl rounded-full" />
             <div className="absolute bottom-0 right-0 w-72 h-72 bg-emerald-300/20 blur-3xl rounded-full" />
 
@@ -422,7 +424,7 @@ export default function Home() {
                   </span>
                 </h2>
 
-                <p className="text-lg text-gray-300 leading-8 mb-8">
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
                   Empower your care staff with real-time hourly check-ins,
                   secure documentation, shift handovers, and modern healthcare
                   workflows designed for supported living and home care teams.
@@ -433,17 +435,17 @@ export default function Home() {
                     Start Free Trial
                   </button>
 
-                  <button className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 font-semibold text-white">
+                  <button className="px-8 py-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 font-semibold text-black dark:text-white">
                     Book Demo
                   </button>
                 </div>
               </div>
 
               <div className="relative w-full max-w-md">
-                <div className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl p-8 shadow-2xl shadow-sky-500/10">
+                <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 backdrop-blur-xl p-8 shadow-2xl shadow-sky-500/10">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
                         Active Documentation
                       </p>
                       <h3 className="text-3xl font-bold mt-2">98.7%</h3>
@@ -457,33 +459,39 @@ export default function Home() {
                   <div className="space-y-5">
                     <div>
                       <div className="flex items-center justify-between mb-2 text-sm">
-                        <span className="text-gray-300">Hourly Check-Ins</span>
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Hourly Check-Ins
+                        </span>
                         <span className="text-sky-300">100%</span>
                       </div>
 
-                      <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+                      <div className="w-full h-3 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
                         <div className="h-full w-full bg-gradient-to-r from-sky-400 to-emerald-300 rounded-full" />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2 text-sm">
-                        <span className="text-gray-300">Shift Handovers</span>
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Shift Handovers
+                        </span>
                         <span className="text-emerald-300">96%</span>
                       </div>
 
-                      <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+                      <div className="w-full h-3 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
                         <div className="h-full w-[96%] bg-gradient-to-r from-sky-400 to-emerald-300 rounded-full" />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2 text-sm">
-                        <span className="text-gray-300">Compliance Rate</span>
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Compliance Rate
+                        </span>
                         <span className="text-sky-300">99%</span>
                       </div>
 
-                      <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+                      <div className="w-full h-3 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
                         <div className="h-full w-[99%] bg-gradient-to-r from-sky-400 to-emerald-300 rounded-full" />
                       </div>
                     </div>

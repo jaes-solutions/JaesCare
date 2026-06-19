@@ -343,10 +343,10 @@ export default function HourlyCheck() {
     }
   }
   return (
-    <div className="min-h-screen bg-[#03060b] text-white flex overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#03060b] text-black dark:text-white flex overflow-hidden transition-colors duration-300">
       <StaffSidebar onLogout={() => {}} />
 
-      <div className="flex-1 overflow-y-auto lg:ml-[245px] min-h-screen bg-[#03060b] pt-[78px]">
+      <div className="flex-1 overflow-y-auto lg:ml-[245px] min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px]">
         <Navbar name={staffName} role={staffRole} />
 
         <main className="max-w-7xl mx-auto p-5 lg:p-7">
@@ -360,7 +360,7 @@ export default function HourlyCheck() {
               Hourly Check-ins
             </h1>
 
-            <p className="text-[#98a6b5] text-[14px] max-w-3xl leading-7">
+            <p className="text-gray-600 dark:text-[#98a6b5] text-[14px] max-w-3xl leading-7">
               View all your assigned check-ins, completed entries, missed
               entries, and shift documentation history.
             </p>
@@ -368,17 +368,17 @@ export default function HourlyCheck() {
 
           <div className="grid xl:grid-cols-[1.15fr_0.85fr] gap-6">
             {/* TODAY */}
-            <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-5">
+            <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-5">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="text-[#5db5ff] text-[13px] mb-1">All Records</p>
 
-                  <h2 className="text-[22px] font-semibold text-white">
+                  <h2 className="text-[22px] font-semibold text-black dark:text-white">
                     All My Check-ins
                   </h2>
                 </div>
 
-                <div className="w-[44px] h-[44px] rounded-[14px] border border-[#1d3248] bg-[#0c1622] flex items-center justify-center text-[#78beff]">
+                <div className="w-[44px] h-[44px] rounded-[14px] border border-black/10 dark:border-[#1d3248] bg-gray-100 dark:bg-[#0c1622] flex items-center justify-center text-[#78beff]">
                   <Clock3 size={18} />
                 </div>
               </div>
@@ -387,19 +387,19 @@ export default function HourlyCheck() {
                 {todayChecks.map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-[18px] border border-white/[0.05] bg-[#0b1018] p-4 flex items-center justify-between"
+                    className="rounded-[18px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-[52px] h-[52px] rounded-[16px] bg-[#101926] border border-[#1f3347] flex items-center justify-center text-[#78beff] text-[14px] font-medium">
+                      <div className="w-[52px] h-[52px] rounded-[16px] bg-gray-100 dark:bg-[#101926] border border-black/10 dark:border-[#1f3347] flex items-center justify-center text-[#78beff] text-[14px] font-medium">
                         {item.time}
                       </div>
 
                       <div>
-                        <p className="text-white text-[14px] font-medium mb-1">
+                        <p className="text-black dark:text-white text-[14px] font-medium mb-1">
                           {item.patient_name || "Assigned Patient"}
                         </p>
 
-                        <p className="text-[#7f92a6] text-[12px] mb-1">
+                        <p className="text-gray-600 dark:text-[#7f92a6] text-[12px] mb-1">
                           {item.date}
                         </p>
 
@@ -441,7 +441,7 @@ export default function HourlyCheck() {
                           </p>
                         </div>
 
-                        <p className="text-[#9dadbb] text-[13px]">
+                        <p className="text-gray-600 dark:text-[#9dadbb] text-[13px]">
                           {item.note}
                         </p>
                       </div>
@@ -464,7 +464,7 @@ export default function HourlyCheck() {
                           Missed
                         </button>
                       ) : (
-                        <p className="text-white text-[15px] font-medium">
+                        <p className="text-black dark:text-white text-[15px] font-medium">
                           {item.completedAt}
                         </p>
                       )}
@@ -475,14 +475,14 @@ export default function HourlyCheck() {
             </div>
 
             {/* HISTORY */}
-            <div className="rounded-[24px] border border-white/[0.06] bg-[#060b12]/95 backdrop-blur-2xl p-5">
+            <div className="rounded-[24px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 backdrop-blur-2xl p-5">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="text-[#5db5ff] text-[13px] mb-1">
                     Previous Records
                   </p>
 
-                  <h2 className="text-[22px] font-semibold text-white">
+                  <h2 className="text-[22px] font-semibold text-black dark:text-white">
                     All Days History
                   </h2>
                 </div>
@@ -492,15 +492,15 @@ export default function HourlyCheck() {
                 {historyData.map((item: any, index) => (
                   <div
                     key={index}
-                    className="rounded-[18px] border border-white/[0.05] bg-[#0b1018] p-4"
+                    className="rounded-[18px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-4"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-[16px] font-medium text-white mb-1">
+                        <h3 className="text-[16px] font-medium text-black dark:text-white mb-1">
                           {item.date}
                         </h3>
 
-                        <p className="text-[#8b98a6] text-[13px]">
+                        <p className="text-gray-600 dark:text-[#8b98a6] text-[13px]">
                           Total scheduled check-ins: {item.checks}
                         </p>
                       </div>
@@ -518,7 +518,7 @@ export default function HourlyCheck() {
                           Completed
                         </p>
 
-                        <h2 className="text-[24px] font-semibold text-white">
+                        <h2 className="text-[24px] font-semibold text-black dark:text-white">
                           {item.completed}
                         </h2>
                       </div>
@@ -528,7 +528,7 @@ export default function HourlyCheck() {
                           Missed
                         </p>
 
-                        <h2 className="text-[24px] font-semibold text-white">
+                        <h2 className="text-[24px] font-semibold text-black dark:text-white">
                           {item.missed}
                         </h2>
                       </div>
@@ -542,28 +542,28 @@ export default function HourlyCheck() {
       </div>
       {showCheckinModal && (
         <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-5xl rounded-[28px] border border-white/[0.08] bg-[#071019] p-6 max-h-[92vh] overflow-y-auto">
+          <div className="w-full max-w-5xl rounded-[28px] border border-black/10 dark:border-white/[0.08] bg-white dark:bg-[#071019] p-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <p className="text-[#66b7ff] text-[13px] uppercase tracking-[0.18em] mb-2">
                   Hourly Care Documentation
                 </p>
 
-                <h2 className="text-[30px] font-semibold text-white">
+                <h2 className="text-[30px] font-semibold text-black dark:text-white">
                   Complete Check-in
                 </h2>
               </div>
 
               <button
                 onClick={() => setShowCheckinModal(false)}
-                className="w-[48px] h-[48px] rounded-[16px] border border-[#1d3248] bg-[#0d1722] flex items-center justify-center text-white"
+                className="w-[48px] h-[48px] rounded-[16px] border border-black/10 dark:border-[#1d3248] bg-gray-100 dark:bg-[#0d1722] flex items-center justify-center text-black dark:text-white"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-              <h3 className="text-[20px] font-semibold text-white mb-5">
+            <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-5 mb-6">
+              <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                 Wellbeing & Presentation
               </h3>
 
@@ -579,7 +579,7 @@ export default function HourlyCheck() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-100 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -589,7 +589,7 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -598,12 +598,12 @@ export default function HourlyCheck() {
                 value={wellbeingNotes}
                 onChange={(e) => setWellbeingNotes(e.target.value)}
                 placeholder="Detailed wellbeing notes..."
-                className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
               />
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-              <h3 className="text-[20px] font-semibold text-white mb-5">
+            <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-5 mb-6">
+              <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                 Mood & Emotional Wellbeing
               </h3>
 
@@ -618,7 +618,7 @@ export default function HourlyCheck() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-100 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -626,7 +626,7 @@ export default function HourlyCheck() {
                       onChange={() => toggleValue(item, mood, setMood)}
                     />
 
-                    <span className="text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -635,12 +635,12 @@ export default function HourlyCheck() {
                 value={moodNotes}
                 onChange={(e) => setMoodNotes(e.target.value)}
                 placeholder="Detailed mood notes..."
-                className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
               />
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-              <h3 className="text-[20px] font-semibold text-white mb-5">
+            <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-5 mb-6">
+              <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                 Hydration & Nutrition
               </h3>
 
@@ -658,7 +658,7 @@ export default function HourlyCheck() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-100 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -668,7 +668,7 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -677,12 +677,12 @@ export default function HourlyCheck() {
                 value={hydrationNotes}
                 onChange={(e) => setHydrationNotes(e.target.value)}
                 placeholder="Hydration notes..."
-                className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
               />
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-              <h3 className="text-[20px] font-semibold text-white mb-5">
+            <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-5 mb-6">
+              <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                 Safety & Environment
               </h3>
 
@@ -697,7 +697,7 @@ export default function HourlyCheck() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-100 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -705,7 +705,7 @@ export default function HourlyCheck() {
                       onChange={() => toggleValue(item, safety, setSafety)}
                     />
 
-                    <span className="text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -714,12 +714,12 @@ export default function HourlyCheck() {
                 value={safetyNotes}
                 onChange={(e) => setSafetyNotes(e.target.value)}
                 placeholder="Safety notes..."
-                className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
               />
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.05] bg-[#0b1018] p-5 mb-6">
-              <h3 className="text-[20px] font-semibold text-white mb-5">
+            <div className="rounded-[22px] border border-black/10 dark:border-white/[0.05] bg-white dark:bg-[#0b1018] p-5 mb-6">
+              <h3 className="text-[20px] font-semibold text-black dark:text-white mb-5">
                 Social Engagement & Activity
               </h3>
 
@@ -736,7 +736,7 @@ export default function HourlyCheck() {
                 ].map((item) => (
                   <label
                     key={item}
-                    className="flex items-center gap-3 rounded-[14px] border border-[#1b2b3d] bg-[#101926] px-4 py-3 cursor-pointer"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/10 dark:border-[#1b2b3d] bg-gray-100 dark:bg-[#101926] px-4 py-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -746,7 +746,7 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">{item}</span>
                   </label>
                 ))}
               </div>
@@ -755,14 +755,14 @@ export default function HourlyCheck() {
                 value={engagementNotes}
                 onChange={(e) => setEngagementNotes(e.target.value)}
                 placeholder="Engagement notes..."
-                className="w-full h-[120px] rounded-[18px] border border-[#1d3248] bg-[#0d1722] p-4 text-white outline-none"
+                className="w-full h-[120px] rounded-[18px] border border-black/10 dark:border-[#1d3248] bg-white dark:bg-[#0d1722] p-4 text-black dark:text-white outline-none"
               />
             </div>
 
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowCheckinModal(false)}
-                className="h-[54px] px-7 rounded-[16px] border border-[#1d3248] bg-[#0d1722] text-white font-medium"
+                className="h-[54px] px-7 rounded-[16px] border border-black/10 dark:border-[#1d3248] bg-gray-100 dark:bg-[#0d1722] text-black dark:text-white font-medium"
               >
                 Cancel
               </button>
