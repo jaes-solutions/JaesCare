@@ -154,12 +154,6 @@ export default function AdminDashboard() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const scrollToSummary = () => {
-    document
-      .getElementById("summary-section")
-      ?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const createShift = async () => {
     try {
       if (!organizationId) {
