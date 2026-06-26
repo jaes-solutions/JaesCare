@@ -32,7 +32,6 @@ export default function Navbar({
 
         {/* RIGHT */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0 relative">
-
           {/* PROFILE */}
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -65,8 +64,12 @@ export default function Navbar({
                   {name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-semibold text-black dark:text-white">{name}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{role}</p>
+                  <p className="font-semibold text-black dark:text-white">
+                    {name}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
+                    {role}
+                  </p>
                 </div>
               </div>
 

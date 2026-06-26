@@ -10,6 +10,9 @@ import HourlyCheck from "./pages/HourlyCheck";
 import AdminPatients from "./pages/AdminPatients";
 import AdminStaff from "./pages/AdminStaff";
 import StaffClient from "./pages/StaffClient";
+import IncidentReporting from "./pages/IncidentReporting";
+import AdminIncidents from "./pages/AdminIncidents";
+import StaffIncident from "./pages/StaffIncident";
 function App() {
   const [darkMode, setDarkMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
@@ -98,6 +101,30 @@ function App() {
             }
           />
           <Route path="/staff-client" element={<StaffClient />} />
+          <Route
+            path="/adminIncidents"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminIncidents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff-incident"
+            element={
+              <ProtectedRoute requiredRole="staff">
+                <StaffIncident />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/incidentReporting"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <IncidentReporting />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </div>

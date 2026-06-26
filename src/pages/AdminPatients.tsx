@@ -15,6 +15,7 @@ export default function AdminPatients() {
   const [patientHandovers, setPatientHandovers] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [checkinSearch, setCheckinSearch] = useState("");
 
   useEffect(() => {
     loadPatients();
@@ -34,11 +35,18 @@ export default function AdminPatients() {
     } = await supabase.auth.getSession();
 
     if (session?.user) {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("full_name, organization_id")
         .eq("id", session.user.id)
         .single();
+
+      if (profileError || !profile?.organization_id) {
+        console.error("Unable to determine organization", profileError);
+        setPatients([]);
+        setLoading(false);
+        return;
+      }
 
       if (profile?.full_name) {
         setAdminName(profile.full_name);
@@ -53,7 +61,7 @@ export default function AdminPatients() {
         `,
         )
         .eq("role", "patient")
-        .eq("organization_id", profile?.organization_id)
+        .eq("organization_id", profile.organization_id)
         .order("full_name");
 
       if (!error && data) {
@@ -179,27 +187,56 @@ export default function AdminPatients() {
     });
   };
 
+  const filteredCheckins = patientCheckins.filter((checkin) => {
+    const q = checkinSearch.trim().toLowerCase();
+    if (!q) return true;
+
+    const values = [
+      checkin.staff_name,
+      checkin.patient_name,
+      checkin.status,
+      checkin.wellbeing_notes,
+      checkin.mood_notes,
+      checkin.hydration_notes,
+      checkin.safety_notes,
+      checkin.engagement_notes,
+      checkin.mobility_notes,
+      checkin.medication_notes,
+      checkin.privacy_notes,
+      checkin.support_notes,
+      checkin.safeguarding_notes,
+      formatUKTime(checkin.submitted_at),
+      formatUKTime(checkin.scheduled_time),
+      formatUKTime(checkin.created_at),
+    ];
+
+    return values.some((v) =>
+      String(v ?? "")
+        .toLowerCase()
+        .includes(q),
+    );
+  });
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#050a11] text-black dark:text-white transition-colors duration-300">
       <AdminSidebar onLogout={handleLogout} />
 
       <div className="lg:ml-[280px]">
-        <Navbar name={adminName} role="Admin" />
-
         <div className="pt-32 px-4 md:px-6 pb-6">
           <div className="max-w-[1600px] mx-auto">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                  Patient Management
+                  Resident Management
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  View patient profiles, care activity and assigned staff.
+                  View resident <Navbar name={adminName} role="Admin" />
+                  profiles, care activity and assigned staff.
                 </p>
               </div>
 
               <div className="px-5 py-3 rounded-2xl bg-sky-400/10 border border-sky-400/20">
-                <p className="text-sky-300 text-sm">Total Patients</p>
+                <p className="text-sky-300 text-sm">Total Residents</p>
                 <p className="text-2xl font-bold">{patients.length}</p>
               </div>
             </div>
@@ -219,9 +256,9 @@ export default function AdminPatients() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr] gap-6 items-start">
+                <div className="grid grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)] gap-6 items-start">
                   <div className="xl:sticky xl:top-[120px] rounded-[18px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d] p-3 h-fit min-h-[300px]">
-                    <h3 className="text-base font-semibold mb-3">Patients</h3>
+                    <h3 className="text-base font-semibold mb-3">Residents</h3>
                     <div className="space-y-2 h-full overflow-y-auto pr-2">
                       {patients.map((patient) => (
                         <button
@@ -239,8 +276,8 @@ export default function AdminPatients() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-6">
-                    <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#11161d] p-8 overflow-visible">
+                  <div className="flex flex-col gap-6 min-w-0 overflow-hidden">
+                    <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#11161d] p-8 overflow-hidden min-w-0 max-w-full">
                       {selectedPatient ? (
                         <>
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -249,7 +286,7 @@ export default function AdminPatients() {
                                 {selectedPatient.full_name}
                               </h2>
                               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                Patient Profile
+                                Resident Profile
                               </p>
                             </div>
                             <div className="flex gap-3">
@@ -258,7 +295,7 @@ export default function AdminPatients() {
                                   onClick={() => setIsEditing(true)}
                                   className="h-[44px] px-5 rounded-xl bg-sky-400 text-black font-medium hover:opacity-90 transition-all"
                                 >
-                                  Edit Patient
+                                  Edit Resident
                                 </button>
                               ) : (
                                 <button
@@ -311,6 +348,10 @@ export default function AdminPatients() {
                                 {
                                   label: "IDDSI Diet Level",
                                   key: "iddsi_level",
+                                },
+                                {
+                                  label: "Resuscitation Status",
+                                  key: "resuscitation_status",
                                 },
                                 {
                                   label: "Emergency Contact Name",
@@ -597,7 +638,7 @@ export default function AdminPatients() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h3 className="text-2xl font-bold">
-                                    Patient Check-ins
+                                    Resident Check-ins
                                   </h3>
                                   <p className="text-gray-400 mt-1">
                                     Complete history for this patient
@@ -612,233 +653,263 @@ export default function AdminPatients() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="w-full">
+                              {/* Info banner */}
+                              <div className="mb-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 px-5 py-3 flex items-center justify-between gap-4">
+                                <div>
+                                  <p className="text-sky-300 font-semibold">
+                                    Resident Care History
+                                  </p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    View every submitted check-in for this
+                                    resident. Scroll horizontally to see all
+                                    recorded care categories.
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mb-5">
+                                <input
+                                  type="text"
+                                  value={checkinSearch}
+                                  onChange={(e) =>
+                                    setCheckinSearch(e.target.value)
+                                  }
+                                  placeholder="Search by staff, status, date, notes..."
+                                  className="w-full rounded-2xl border border-sky-400/20 bg-white dark:bg-[#0b1018] px-5 py-3 text-black dark:text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                                />
+                              </div>
+                              <div className="w-full overflow-hidden">
                                 <div
-                                  className="rounded-2xl border border-black/10 dark:border-white/10 bg-gray-50 dark:bg-[#0b1018] overflow-x-scroll overflow-y-hidden pb-4"
+                                  className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1722] shadow-xl overflow-hidden"
                                   style={{
                                     WebkitOverflowScrolling: "touch",
                                     width: "100%",
                                     maxWidth: "100%",
                                   }}
                                 >
-                                  {patientCheckins.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-600 dark:text-gray-400">
-                                      No check-ins recorded for this patient.
-                                    </div>
-                                  ) : (
-                                    <table
-                                      className="text-sm"
-                                      style={{ minWidth: "5000px" }}
-                                    >
-                                      <thead>
-                                        <tr>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Staff Name
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Staff ID
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Shift ID
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Patient Name
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Date Submitted
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Scheduled Time
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Created At
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Status
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Wellbeing
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Wellbeing Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Mood
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Mood Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Hydration
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Hydration Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Safety
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Safety Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Engagement
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Engagement Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Mobility
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Mobility Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Medication
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Medication Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Privacy
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Privacy Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Support
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            Support Notes
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-white/10 text-gray-400 whitespace-nowrap">
-                                            Safeguarding
-                                          </th>
-                                          <th className="px-4 py-3 text-left border-b border-white/10 text-gray-400 whitespace-nowrap">
-                                            Safeguarding Notes
-                                          </th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {patientCheckins.map((checkin) => (
-                                          <tr key={checkin.id}>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.staff_name || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.staff_id || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.shift_id || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.patient_name || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {formatUKTime(
-                                                checkin.submitted_at,
-                                              )}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {formatUKTime(
-                                                checkin.scheduled_time,
-                                              )}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {formatUKTime(checkin.created_at)}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.status || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.wellbeing)
-                                                ? checkin.wellbeing.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.wellbeing_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.mood)
-                                                ? checkin.mood.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.mood_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.hydration)
-                                                ? checkin.hydration.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.hydration_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.safety)
-                                                ? checkin.safety.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.safety_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.engagement)
-                                                ? checkin.engagement.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.engagement_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.mobility)
-                                                ? checkin.mobility.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.mobility_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.medication)
-                                                ? checkin.medication.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.medication_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.privacy)
-                                                ? checkin.privacy.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.privacy_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(checkin.support)
-                                                ? checkin.support.join(", ")
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top">
-                                              {checkin.support_notes || "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-white/5 whitespace-nowrap align-top">
-                                              {Array.isArray(
-                                                checkin.safeguarding,
-                                              )
-                                                ? checkin.safeguarding.join(
-                                                    ", ",
-                                                  )
-                                                : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 border-b border-white/5 whitespace-nowrap align-top">
-                                              {checkin.safeguarding_notes ||
-                                                "-"}
-                                            </td>
+                                  <div className="overflow-x-auto overflow-y-auto max-h-[650px]">
+                                    {filteredCheckins.length === 0 ? (
+                                      <div className="p-8 text-center text-gray-600 dark:text-gray-400">
+                                        No check-ins match your search.
+                                      </div>
+                                    ) : (
+                                      <table className="min-w-max w-max text-sm border-separate border-spacing-0">
+                                        <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-[#182230] backdrop-blur">
+                                          <tr>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Staff Name
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Resident Name
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Date Submitted
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Scheduled Time
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Created At
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Status
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Wellbeing
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Wellbeing Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Mood
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Mood Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Hydration
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Hydration Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Safety
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Safety Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Engagement
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Engagement Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Mobility
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Mobility Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Medication
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Medication Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Privacy
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Privacy Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Support
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Support Notes
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-white/10 text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Safeguarding
+                                            </th>
+                                            <th className="px-4 py-3 text-left border-b border-white/10 text-gray-400 whitespace-nowrap uppercase tracking-wider text-xs font-semibold bg-slate-100 dark:bg-[#182230]">
+                                              Safeguarding Notes
+                                            </th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  )}
+                                        </thead>
+                                        <tbody>
+                                          {filteredCheckins.map((checkin) => (
+                                            <tr
+                                              key={checkin.id}
+                                              className="even:bg-black/[0.02] dark:even:bg-white/[0.02] hover:bg-sky-400/5 transition-colors"
+                                            >
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.staff_name || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.patient_name || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {formatUKTime(
+                                                  checkin.submitted_at,
+                                                )}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {formatUKTime(
+                                                  checkin.scheduled_time,
+                                                )}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {formatUKTime(
+                                                  checkin.created_at,
+                                                )}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.status || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(
+                                                  checkin.wellbeing,
+                                                )
+                                                  ? checkin.wellbeing.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.wellbeing_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(checkin.mood)
+                                                  ? checkin.mood.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.mood_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(
+                                                  checkin.hydration,
+                                                )
+                                                  ? checkin.hydration.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.hydration_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(checkin.safety)
+                                                  ? checkin.safety.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.safety_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(
+                                                  checkin.engagement,
+                                                )
+                                                  ? checkin.engagement.join(
+                                                      ", ",
+                                                    )
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.engagement_notes ||
+                                                  "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(checkin.mobility)
+                                                  ? checkin.mobility.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.mobility_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(
+                                                  checkin.medication,
+                                                )
+                                                  ? checkin.medication.join(
+                                                      ", ",
+                                                    )
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.medication_notes ||
+                                                  "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(checkin.privacy)
+                                                  ? checkin.privacy.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.privacy_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(checkin.support)
+                                                  ? checkin.support.join(", ")
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.support_notes || "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {Array.isArray(
+                                                  checkin.safeguarding,
+                                                )
+                                                  ? checkin.safeguarding.join(
+                                                      ", ",
+                                                    )
+                                                  : "-"}
+                                              </td>
+                                              <td className="px-4 py-3 border-b border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
+                                                {checkin.safeguarding_notes ||
+                                                  "-"}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -849,10 +920,10 @@ export default function AdminPatients() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h3 className="text-2xl font-bold">
-                                    Patient Handovers
+                                    Resident Handovers
                                   </h3>
                                   <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                    Complete handover history for this patient
+                                    Complete handover history for this resident
                                   </p>
                                 </div>
 
@@ -868,7 +939,7 @@ export default function AdminPatients() {
 
                               {patientHandovers.length === 0 ? (
                                 <div className="rounded-2xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-8 text-center text-gray-600 dark:text-gray-400">
-                                  No handovers recorded for this patient.
+                                  No handovers recorded for this resident.
                                 </div>
                               ) : (
                                 <div className="space-y-4">
@@ -987,7 +1058,7 @@ export default function AdminPatients() {
                         </>
                       ) : (
                         <p className="text-gray-600 dark:text-gray-400">
-                          Select a patient
+                          Select a resident
                         </p>
                       )}
                     </div>

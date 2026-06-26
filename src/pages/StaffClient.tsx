@@ -128,17 +128,17 @@ export default function StaffClient() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <p className="text-sky-300 text-sm uppercase tracking-wider">
-                  My Client
+                  Resident
                 </p>
                 <h1 className="text-4xl font-bold mt-2">
-                  {patient?.name || "No Patient Assigned"}
+                  {patient?.name || "No Resident Assigned"}
                 </h1>
               </div>
 
               <div className="px-5 py-4 rounded-2xl bg-sky-500/10 border border-sky-500/20">
-                <p className="text-sky-300 text-sm">Assigned Patient</p>
+                <p className="text-sky-300 text-sm">Assigned Resident</p>
                 <p className="font-semibold mt-1">
-                  {patient?.name || "No Patient Assigned"}
+                  {patient?.name || "No Resident Assigned"}
                 </p>
               </div>
             </div>
@@ -148,15 +148,15 @@ export default function StaffClient() {
             {!patientDetails ? (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-semibold mb-2">
-                  No Patient Assigned
+                  No Resident Assigned
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  You do not have a patient assigned for today's shift.
+                  You do not have a resident assigned for today's shift.
                 </p>
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-6">Patient Details</h2>
+                <h2 className="text-xl font-semibold mb-6">Resident Details</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <Info label="First Name" value={patientDetails?.first_name} />

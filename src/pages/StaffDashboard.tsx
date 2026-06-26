@@ -56,6 +56,8 @@ export default function StaffDashboard() {
   ).length;
 
   const totalCount = todayChecks.length;
+  const hourlyChecks = todayChecks.filter((c) => !c.isFourHourly);
+  const fourHourlyChecks = todayChecks.filter((c) => c.isFourHourly);
   const [nextCheckin, setNextCheckin] = useState<any>(null);
   const [nextCountdown, setNextCountdown] = useState("--");
   const [nextProgress, setNextProgress] = useState(0);
@@ -379,7 +381,7 @@ export default function StaffDashboard() {
             let status = "Upcoming";
             let color = "blue";
             let action = "Locked";
-            let note = "Waiting for check-in window";
+            let note = "Waiting for Check-in";
 
             const diffMinutes = (now.getTime() - checkTime.getTime()) / 60000;
 
@@ -826,15 +828,15 @@ export default function StaffDashboard() {
 
                 <div>
                   <p className="text-[#56a8ff] text-[14px] font-medium mb-1">
-                    My Client
+                    Resident
                   </p>
 
                   <h2 className="text-[24px] font-semibold text-black dark:text-white leading-tight mb-2">
-                    {assignedPatient?.patient_name || "No Patient Assigned"}
+                    {assignedPatient?.patient_name || "No Resident Assigned"}
                   </h2>
 
                   <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
-                    {assignedPatient?.patient_role || "Care Patient"}
+                    {assignedPatient?.patient_role || "Care Resident"}
                   </p>
                 </div>
               </div>
@@ -981,7 +983,7 @@ export default function StaffDashboard() {
                       </h3>
 
                       <p className="text-gray-600 dark:text-[#9ca8b5] text-[14px]">
-                        Patient: {shift.patient_name}
+                        Resident: {shift.patient_name}
                       </p>
                     </div>
 
@@ -1110,76 +1112,160 @@ export default function StaffDashboard() {
                 </button>
               </div>
 
-              <div className="space-y-2">
-                {todayChecks.map((item, index) => (
-                  <div
-                    key={index}
-                    className="min-h-[66px] py-3 border-b border-white/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-5 w-full sm:w-auto">
-                      <p className="text-black dark:text-white text-[15px] w-[70px]">
-                        {item.time}
-                      </p>
-
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-sky-400 mb-4">
+                    Hourly Check-ins
+                  </h3>
+                  <div className="space-y-2">
+                    {hourlyChecks.map((item, index) => (
                       <div
-                        className={`w-4 h-4 rounded-full ${
-                          item.color === "green"
-                            ? "bg-[#8eff4d]"
-                            : item.color === "yellow"
-                              ? "bg-[#ffc83d]"
-                              : item.color === "red"
-                                ? "bg-[#ff5757]"
-                                : "border border-[#7aa6cf]"
-                        }`}
-                      />
-
-                      <div>
-                        <p
-                          className={`text-[15px] ${
-                            item.color === "green"
-                              ? "text-[#8eff4d]"
-                              : item.color === "yellow"
-                                ? "text-[#ffc83d]"
-                                : item.color === "red"
-                                  ? "text-[#ff5757]"
-                                  : "text-[#a9c7e6]"
-                          }`}
-                        >
-                          {item.status}
-                        </p>
-                        <p className="text-[11px] text-gray-500 dark:text-[#6f7f91] mt-1">
-                          {item.note}
-                        </p>
+                        key={index}
+                        className="min-h-[66px] py-3 border-b border-white/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="grid grid-cols-[72px_24px_minmax(0,1fr)] items-center gap-4 flex-1 min-w-0">
+                          <p className="text-black dark:text-white text-[15px] font-medium leading-none tabular-nums">
+                            {item.time}
+                          </p>
+                          <div
+                            className={`w-4 h-4 rounded-full justify-self-center self-center shrink-0 ${
+                              item.color === "green"
+                                ? "bg-[#8eff4d]"
+                                : item.color === "yellow"
+                                  ? "bg-[#ffc83d]"
+                                  : item.color === "red"
+                                    ? "bg-[#ff5757]"
+                                    : "border border-[#7aa6cf]"
+                            }`}
+                          />
+                          <div className="min-w-0 flex flex-col justify-center">
+                            <p
+                              className={`text-[15px] ${
+                                item.color === "green"
+                                  ? "text-[#8eff4d]"
+                                  : item.color === "yellow"
+                                    ? "text-[#ffc83d]"
+                                    : item.color === "red"
+                                      ? "text-[#ff5757]"
+                                      : "text-[#a9c7e6]"
+                              }`}
+                            >
+                              {item.status}
+                            </p>
+                            <p className="text-[11px] text-gray-500 dark:text-[#6f7f91] mt-1">
+                              {item.note}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          {item.action === "Start" ? (
+                            <button
+                              onClick={() => {
+                                setSelectedCheckin(item);
+                                setShowCheckinModal(true);
+                              }}
+                              className="w-[92px] h-[38px] rounded-[12px] bg-[#0e1d2b] border border-[#1f3347] text-[#7ec1ff] text-[14px] font-medium hover:bg-[#13273a] transition-all duration-300"
+                            >
+                              Start
+                            </button>
+                          ) : item.action === "Locked" ? (
+                            <button className="w-[92px] h-[38px] rounded-[12px] bg-[#0a1016] border border-[#1b2733] text-[#5d7186] text-[14px] font-medium cursor-not-allowed">
+                              Locked
+                            </button>
+                          ) : item.action === "Missed" ? (
+                            <button className="w-[92px] h-[38px] rounded-[12px] bg-[#2a1111] border border-[#5c2020] text-[#ff6b6b] text-[14px] font-medium cursor-not-allowed">
+                              Missed
+                            </button>
+                          ) : (
+                            <p className="text-[15px] text-gray-800 dark:text-[#d5dde7]">
+                              {item.action}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    <div>
-                      {item.action === "Start" ? (
-                        <button
-                          onClick={() => {
-                            setSelectedCheckin(item);
-                            setShowCheckinModal(true);
-                          }}
-                          className="w-[92px] h-[38px] rounded-[12px] bg-[#0e1d2b] border border-[#1f3347] text-[#7ec1ff] text-[14px] font-medium hover:bg-[#13273a] transition-all duration-300"
-                        >
-                          Start
-                        </button>
-                      ) : item.action === "Locked" ? (
-                        <button className="w-[92px] h-[38px] rounded-[12px] bg-[#0a1016] border border-[#1b2733] text-[#5d7186] text-[14px] font-medium cursor-not-allowed">
-                          Locked
-                        </button>
-                      ) : item.action === "Missed" ? (
-                        <button className="w-[92px] h-[38px] rounded-[12px] bg-[#2a1111] border border-[#5c2020] text-[#ff6b6b] text-[14px] font-medium cursor-not-allowed">
-                          Missed
-                        </button>
-                      ) : (
-                        <p className="text-[15px] text-gray-800 dark:text-[#d5dde7]">
-                          {item.action}
-                        </p>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-emerald-400 mb-4">
+                    4-Hourly Reviews
+                  </h3>
+                  <div className="space-y-2">
+                    {fourHourlyChecks.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
+                        No 4-hourly reviews scheduled for this shift.
+                      </div>
+                    ) : (
+                      fourHourlyChecks.map((item, index) => (
+                        <div
+                          key={index}
+                          className="min-h-[66px] py-3 border-b border-white/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                          <div className="grid grid-cols-[72px_24px_minmax(0,1fr)] items-center gap-4 flex-1 min-w-0">
+                            <p className="text-black dark:text-white text-[15px] font-medium leading-none tabular-nums">
+                              {item.time}
+                            </p>
+                            <div
+                              className={`w-4 h-4 rounded-full justify-self-center self-center shrink-0 ${
+                                item.color === "green"
+                                  ? "bg-[#8eff4d]"
+                                  : item.color === "yellow"
+                                    ? "bg-[#ffc83d]"
+                                    : item.color === "red"
+                                      ? "bg-[#ff5757]"
+                                      : "border border-[#7aa6cf]"
+                              }`}
+                            />
+                            <div className="min-w-0 flex flex-col justify-center">
+                              <p
+                                className={`text-[15px] ${
+                                  item.color === "green"
+                                    ? "text-[#8eff4d]"
+                                    : item.color === "yellow"
+                                      ? "text-[#ffc83d]"
+                                      : item.color === "red"
+                                        ? "text-[#ff5757]"
+                                        : "text-[#a9c7e6]"
+                                }`}
+                              >
+                                {item.status}
+                              </p>
+                              <p className="text-[11px] text-gray-500 dark:text-[#6f7f91] mt-1">
+                                {item.note}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            {item.action === "Start" ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedCheckin(item);
+                                  setShowCheckinModal(true);
+                                }}
+                                className="w-[92px] h-[38px] rounded-[12px] bg-[#0e1d2b] border border-[#1f3347] text-[#7ec1ff] text-[14px] font-medium hover:bg-[#13273a] transition-all duration-300"
+                              >
+                                Start
+                              </button>
+                            ) : item.action === "Locked" ? (
+                              <button className="w-[92px] h-[38px] rounded-[12px] bg-[#0a1016] border border-[#1b2733] text-[#5d7186] text-[14px] font-medium cursor-not-allowed">
+                                Locked
+                              </button>
+                            ) : item.action === "Missed" ? (
+                              <button className="w-[92px] h-[38px] rounded-[12px] bg-[#2a1111] border border-[#5c2020] text-[#ff6b6b] text-[14px] font-medium cursor-not-allowed">
+                                Missed
+                              </button>
+                            ) : (
+                              <p className="text-[15px] text-gray-800 dark:text-[#d5dde7]">
+                                {item.action}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1338,7 +1424,7 @@ export default function StaffDashboard() {
           }}
         >
           <div className="min-h-screen w-full flex items-start justify-center px-4 py-10">
-            <div className="relative z-[2147483647] w-full max-w-5xl rounded-[20px] sm:rounded-[30px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12] p-4 sm:p-6 shadow-2xl h-[92vh] overflow-y-auto">
+            <div className="relative z-[2147483647] w-full max-w-5xl rounded-[20px] sm:rounded-[30px] border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12] p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-[28px] font-semibold text-black dark:text-white mb-2">
@@ -1800,8 +1886,8 @@ export default function StaffDashboard() {
                   </div>
                 </>
               )}
-              <div className="h-[40px]" />
-              <div className="flex flex-col sm:flex-row justify-end gap-4 sticky bottom-0 left-0 right-0 bg-white dark:bg-[#060b12] pt-4 pb-2 border-t border-black/10 dark:border-white/[0.06] mt-6">
+
+              <div className="flex flex-col sm:flex-row justify-end gap-4 sticky -bottom-6 left-0 right-0 bg-white dark:bg-[#060b12] pt-4 pb-10 border-t border-black/10 dark:border-white/[0.06] mt-6">
                 <button
                   onClick={() => setShowCheckinModal(false)}
                   className="h-[54px] px-7 rounded-[16px] border border-black/10 dark:border-[#1d3248] bg-gray-100 dark:bg-[#0d1722] text-black dark:text-white font-medium"

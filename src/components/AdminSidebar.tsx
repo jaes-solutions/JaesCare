@@ -125,7 +125,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
               />
 
               <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
-                Patients
+                Residents
               </span>
             </button>
 
