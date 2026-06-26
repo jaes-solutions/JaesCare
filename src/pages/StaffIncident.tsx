@@ -55,7 +55,6 @@ const formatUKTime = (date?: string, timeOnly = false) => {
 
 const StaffIncident: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [activeShift, setActiveShift] = useState<Shift | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [search, setSearch] = useState("");
@@ -69,12 +68,10 @@ const StaffIncident: React.FC = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session || !session.user) {
-        setUser(null);
         setActiveShift(null);
         setLoading(false);
         return;
       }
-      setUser(session.user);
       // Find today's date range
       const today = new Date();
       const isoToday = today.toISOString().slice(0, 10);
