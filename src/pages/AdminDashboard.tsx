@@ -28,24 +28,35 @@ export default function AdminDashboard() {
   const [patientList, setPatientList] = useState<any[]>([]);
   const [shiftList, setShiftList] = useState<any[]>([]);
   const [checkinCount, setCheckinCount] = useState(0);
+  const [patientCount, setPatientCount] = useState(0);
+  const [completedShiftCount, setCompletedShiftCount] = useState(0);
 
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedPatient, setSelectedPatient] = useState("");
   const [shiftDate, setShiftDate] = useState("");
   const [shiftStart, setShiftStart] = useState("");
   const [shiftEnd, setShiftEnd] = useState("");
+  const [staffCount, setStaffCount] = useState(0);
+  const [maxUsers, setMaxUsers] = useState(5);
 
-  const today = new Date().toISOString().split("T")[0];
-
-  const todayShifts = shiftList.filter((shift) => shift.shift_date === today);
-
-  const activeShifts = todayShifts.filter(
-    (shift) => (shift.status || "").toLowerCase() === "active",
-  );
-
-  const completedShifts = todayShifts.filter(
-    (shift) => (shift.status || "").toLowerCase() === "completed",
-  );
+  const activeShifts = shiftList.filter((shift) => {
+    const now = new Date();
+    const start = new Date(`${shift.shift_date}T${shift.start_time}`);
+    // Overnight/end-date logic
+    const effectiveEndDate = new Date(
+      `${shift.end_date || shift.shift_date}T00:00:00`,
+    );
+    if (
+      (!shift.end_date || shift.end_date === shift.shift_date) &&
+      shift.end_time <= shift.start_time
+    ) {
+      effectiveEndDate.setDate(effectiveEndDate.getDate() + 1);
+    }
+    const end = new Date(effectiveEndDate);
+    const [endHour, endMinute] = shift.end_time.split(":").map(Number);
+    end.setHours(endHour, endMinute, 0, 0);
+    return now >= start && now < end;
+  });
 
   useEffect(() => {
     checkAdminAccess();
@@ -75,6 +86,17 @@ export default function AdminDashboard() {
 
       setAdminName(profile.full_name || "Admin");
       setOrganizationId(profile.organization_id || null);
+      const { data: organization, error: organizationError } = await supabase
+        .from("organizations")
+        .select("max_users")
+        .eq("id", profile.organization_id)
+        .single();
+
+      if (organizationError) {
+        console.error(organizationError);
+      } else {
+        setMaxUsers(organization?.max_users ?? 5);
+      }
       // Only get profiles belonging to this admin's organization
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
@@ -98,6 +120,30 @@ export default function AdminDashboard() {
       setStaffList(staffProfiles);
       setPatientList(patientProfiles);
 
+      const { count: totalStaff, error: staffCountError } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", profile.organization_id)
+        .eq("role", "staff");
+
+      if (staffCountError) {
+        console.error(staffCountError);
+      } else {
+        setStaffCount(totalStaff || 0);
+      }
+
+      const { count: totalPatients, error: patientCountError } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", profile.organization_id)
+        .eq("role", "patient");
+
+      if (patientCountError) {
+        console.error(patientCountError);
+      } else {
+        setPatientCount(totalPatients || 0);
+      }
+
       // Only get shifts belonging to this admin's organization
       const { data: shifts, error: shiftsError } = await supabase
         .from("shifts")
@@ -109,7 +155,51 @@ export default function AdminDashboard() {
       if (shiftsError) {
         console.error(shiftsError);
       } else {
-        setShiftList(shifts || []);
+        const updatedShifts = await Promise.all(
+          (shifts || []).map(async (shift) => {
+            const now = new Date();
+            const shiftStartDateTime = new Date(
+              `${shift.shift_date}T${shift.start_time}`,
+            );
+            // Overnight/end-date logic
+            const effectiveEndDate = new Date(
+              `${shift.end_date || shift.shift_date}T00:00:00`,
+            );
+            if (
+              (!shift.end_date || shift.end_date === shift.shift_date) &&
+              shift.end_time <= shift.start_time
+            ) {
+              effectiveEndDate.setDate(effectiveEndDate.getDate() + 1);
+            }
+            const shiftEndDateTime = new Date(effectiveEndDate);
+            const [endHour, endMinute] = shift.end_time.split(":").map(Number);
+            shiftEndDateTime.setHours(endHour, endMinute, 0, 0);
+
+            let calculatedStatus = "upcoming";
+
+            if (now >= shiftEndDateTime) {
+              calculatedStatus = "completed";
+            } else if (now >= shiftStartDateTime) {
+              calculatedStatus = "active";
+            } else {
+              calculatedStatus = "upcoming";
+            }
+
+            if (shift.status !== calculatedStatus) {
+              await supabase
+                .from("shifts")
+                .update({ status: calculatedStatus })
+                .eq("id", shift.id)
+                .eq("organization_id", profile.organization_id);
+
+              return { ...shift, status: calculatedStatus };
+            }
+
+            return shift;
+          }),
+        );
+
+        setShiftList(updatedShifts);
       }
 
       // Only count checkins belonging to this admin's organization
@@ -122,6 +212,19 @@ export default function AdminDashboard() {
         console.error(checkinsError);
       } else {
         setCheckinCount(totalCheckins || 0);
+      }
+
+      const { count: totalCompletedShifts, error: completedShiftsError } =
+        await supabase
+          .from("shifts")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", profile.organization_id)
+          .eq("handover_completed", true);
+
+      if (completedShiftsError) {
+        console.error(completedShiftsError);
+      } else {
+        setCompletedShiftCount(totalCompletedShifts || 0);
       }
     } catch (err) {
       console.error(err);
@@ -168,18 +271,74 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Overnight shift support
+      const isOvernight = shiftEnd <= shiftStart;
+
+      const [year, month, day] = shiftDate.split("-").map(Number);
+      const endDate = new Date(year, month - 1, day);
+
+      if (isOvernight) {
+        endDate.setDate(endDate.getDate() + 1);
+      }
+
+      const formattedEndDate = `${endDate.getFullYear()}-${String(
+        endDate.getMonth() + 1,
+      ).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+
+      // Overlap validation
+      const { data: existingShifts, error: existingShiftsError } =
+        await supabase
+          .from("shifts")
+          .select(
+            "id, staff_id, patient_id, shift_date, end_date, start_time, end_time",
+          )
+          .eq("organization_id", organizationId)
+          .eq("shift_date", shiftDate);
+
+      if (existingShiftsError) {
+        console.error(existingShiftsError);
+        alert("Unable to validate shift schedule.");
+        return;
+      }
+
+      const newStartDateTime = new Date(`${shiftDate}T${shiftStart}`);
+      const newEndDateTime = new Date(`${formattedEndDate}T${shiftEnd}`);
+
+      const overlaps = (existingShifts || []).some((existing: any) => {
+        const existingEndDate = existing.end_date || existing.shift_date;
+        const existingStart = new Date(
+          `${existing.shift_date}T${existing.start_time}`,
+        );
+        const existingEnd = new Date(`${existingEndDate}T${existing.end_time}`);
+
+        const timeOverlap =
+          newStartDateTime < existingEnd && newEndDateTime > existingStart;
+
+        return (
+          timeOverlap &&
+          (existing.staff_id === staff.id || existing.patient_id === patient.id)
+        );
+      });
+
+      if (overlaps) {
+        alert(
+          "Scheduling conflict. The selected staff member or resident already has a shift during this time.",
+        );
+        return;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const selectedDate = new Date(`${shiftDate}T00:00:00`);
+      selectedDate.setHours(0, 0, 0, 0);
 
-      let shiftStatus = "active";
-
-      if (selectedDate > today) {
-        shiftStatus = "upcoming";
-      } else if (selectedDate < today) {
-        shiftStatus = "completed";
+      if (selectedDate < today) {
+        alert("You cannot create shifts for a past date.");
+        return;
       }
+
+      let shiftStatus = selectedDate > today ? "upcoming" : "active";
 
       const { error } = await supabase.from("shifts").insert({
         patient_id: patient.id,
@@ -187,6 +346,7 @@ export default function AdminDashboard() {
         staff_id: staff.id,
         staff_name: staff.full_name,
         shift_date: shiftDate,
+        end_date: formattedEndDate,
         start_time: shiftStart,
         end_time: shiftEnd,
         status: shiftStatus,
@@ -211,6 +371,7 @@ export default function AdminDashboard() {
       console.error(err);
     }
   };
+
   const createUser = async () => {
     try {
       if (!organizationId) {
@@ -218,13 +379,30 @@ export default function AdminDashboard() {
         return;
       }
 
-      const { count: organizationUsers } = await supabase
+      const { count: organizationStaff } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("organization_id", organizationId);
+        .eq("organization_id", organizationId)
+        .eq("role", "staff");
 
-      if ((organizationUsers || 0) >= 5) {
-        alert("User limit reached. This organisation can only have 5 users.");
+      const { data: organization, error: organizationError } = await supabase
+        .from("organizations")
+        .select("max_users")
+        .eq("id", organizationId)
+        .single();
+
+      if (organizationError) {
+        console.error(organizationError);
+        alert("Unable to verify organisation staff limit.");
+        return;
+      }
+
+      const allowedStaff = organization?.max_users ?? 5;
+
+      if (newRole === "staff" && (organizationStaff || 0) >= allowedStaff) {
+        alert(
+          `Staff limit reached. This organisation can have a maximum of ${allowedStaff} staff members.`,
+        );
         return;
       }
 
@@ -339,7 +517,7 @@ export default function AdminDashboard() {
                 </p>
 
                 <h2 className="text-[30px] font-semibold leading-none text-emerald-300">
-                  {staffList.length}
+                  {staffCount} / {maxUsers}
                 </h2>
               </div>
 
@@ -349,11 +527,11 @@ export default function AdminDashboard() {
                 </div>
 
                 <p className="text-gray-600 dark:text-gray-500 text-[13px] mb-1.5">
-                  Active Check-ins
+                  Total Residents
                 </p>
 
                 <h2 className="text-[30px] font-semibold leading-none">
-                  {checkinCount}
+                  {patientCount}
                 </h2>
               </div>
             </div>
@@ -375,7 +553,7 @@ export default function AdminDashboard() {
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-500 text-[13px]">
-                      Create staff and patient accounts securely.
+                      Create staff and Resident accounts securely.
                     </p>
                   </div>
 
@@ -415,7 +593,7 @@ export default function AdminDashboard() {
                     className="w-full h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/90 px-4 text-black dark:text-white outline-none"
                   >
                     <option value="staff">Staff</option>
-                    <option value="patient">Patient</option>
+                    <option value="patient">Resident</option>
                   </select>
                 </div>
 
@@ -459,7 +637,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setSelectedPatient(e.target.value)}
                     className="h-[50px] rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d] px-4"
                   >
-                    <option value="">Select Patient</option>
+                    <option value="">Select Resident</option>
                     {patientList.map((patient) => (
                       <option key={patient.id} value={patient.id}>
                         {patient.full_name}
@@ -565,13 +743,26 @@ export default function AdminDashboard() {
                   )}
 
                   {shiftList.map((shift) => {
-                    const formattedDate = new Date(
-                      `${shift.shift_date}T00:00:00`,
-                    ).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    });
+                    const startDate = new Date(`${shift.shift_date}T00:00:00`);
+                    const endDate = new Date(
+                      `${shift.end_date || shift.shift_date}T00:00:00`,
+                    );
+
+                    const formattedDate =
+                      shift.end_date && shift.end_date !== shift.shift_date
+                        ? `${startDate.toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "long",
+                          })} - ${endDate.toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })}`
+                        : startDate.toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          });
 
                     return (
                       <div
@@ -597,7 +788,7 @@ export default function AdminDashboard() {
                               </p>
                               <p className="text-emerald-300 text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">
-                                  Patient:
+                                  Resident:
                                 </span>{" "}
                                 {shift.patient_name}
                               </p>
@@ -618,10 +809,43 @@ export default function AdminDashboard() {
                                 Status
                               </p>
                               <p className="text-black dark:text-white font-semibold capitalize">
-                                {(shift.status || "unknown").replaceAll(
-                                  "_",
-                                  " ",
-                                )}
+                                {(() => {
+                                  const now = new Date();
+                                  const shiftStartDateTime = new Date(
+                                    `${shift.shift_date}T${shift.start_time}`,
+                                  );
+                                  // Overnight/end-date logic
+                                  const effectiveEndDate = new Date(
+                                    `${shift.end_date || shift.shift_date}T00:00:00`,
+                                  );
+                                  if (
+                                    (!shift.end_date ||
+                                      shift.end_date === shift.shift_date) &&
+                                    shift.end_time <= shift.start_time
+                                  ) {
+                                    effectiveEndDate.setDate(
+                                      effectiveEndDate.getDate() + 1,
+                                    );
+                                  }
+                                  const shiftEndDateTime = new Date(
+                                    effectiveEndDate,
+                                  );
+                                  const [endHour, endMinute] = shift.end_time
+                                    .split(":")
+                                    .map(Number);
+                                  shiftEndDateTime.setHours(
+                                    endHour,
+                                    endMinute,
+                                    0,
+                                    0,
+                                  );
+
+                                  if (now >= shiftEndDateTime)
+                                    return "Completed";
+                                  if (now >= shiftStartDateTime)
+                                    return "Active";
+                                  return "Upcoming";
+                                })()}
                               </p>
                             </div>
                             <div className="rounded-[14px] border border-green-200 dark:border-[#1f3f2f] bg-green-50 dark:bg-[#101a14] px-4 py-3">
@@ -656,32 +880,30 @@ export default function AdminDashboard() {
                 id="summary-section"
                 className="rounded-[20px] sm:rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-4 sm:p-6"
               >
-                <h2 className="text-[20px] font-semibold mb-6">
-                  Today's Summary
-                </h2>
+                <h2 className="text-[20px] font-semibold mb-6">Summary</h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
-                    <Users className="mx-auto mb-4 text-sky-300" />
+                    <ClipboardList className="mx-auto mb-4 text-sky-300" />
 
                     <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
-                      Staff
-                    </p>
-
-                    <h3 className="text-[30px] font-semibold leading-none">
-                      {staffList.length}
-                    </h3>
-                  </div>
-
-                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
-                    <ClipboardList className="mx-auto mb-4 text-emerald-300" />
-
-                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
-                      Check-ins
+                      Total Check-ins
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
                       {checkinCount}
+                    </h3>
+                  </div>
+
+                  <div className="rounded-[16px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d]/80 p-5 text-center">
+                    <FileText className="mx-auto mb-4 text-emerald-300" />
+
+                    <p className="text-gray-600 dark:text-gray-500 text-[13px] text-[12px] mb-1.5">
+                      Total Shifts
+                    </p>
+
+                    <h3 className="text-[30px] font-semibold leading-none">
+                      {shiftList.length}
                     </h3>
                   </div>
 
@@ -705,7 +927,7 @@ export default function AdminDashboard() {
                     </p>
 
                     <h3 className="text-[30px] font-semibold leading-none">
-                      {completedShifts.length}
+                      {completedShiftCount}
                     </h3>
                   </div>
                 </div>

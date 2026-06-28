@@ -287,7 +287,7 @@ export default function StaffDashboard() {
 
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
-        .select("*")
+        .select("*, organization_id")
         .eq("staff_id", session.user.id)
         .order("shift_date", { ascending: true });
 
@@ -472,6 +472,7 @@ export default function StaffDashboard() {
                       patient_name: shift.patient_name,
                       staff_id: shift.staff_id,
                       staff_name: shift.staff_name,
+                      organization_id: shift.organization_id,
                       scheduled_time: checkTime.toISOString(),
                       submitted_at: new Date().toISOString(),
                       status: "missed",
@@ -622,6 +623,7 @@ export default function StaffDashboard() {
           patient_name: shift.patient_name,
           staff_id: session.user.id,
           staff_name: staffName,
+          organization_id: shift.organization_id,
           scheduled_time: scheduledTime.toISOString(),
           submitted_at: submittedAt.toISOString(),
           status: checkinStatus,
