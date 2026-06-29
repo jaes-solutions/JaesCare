@@ -37,7 +37,7 @@ const FEATURES = [
     accent: "emerald",
     title: "Compliance & Security",
     description:
-      "Protected records, role-based access and non-editable audit trails built to support CQC compliance and safeguarding requirements.",
+      "Protected records, role-based access and non-editable audit trails built to support regulatory compliance and safeguarding requirements.",
   },
   {
     icon: Activity,
@@ -85,9 +85,9 @@ const FAQS = [
       "JAES Care is a cloud-based care management, workforce management and compliance platform built for supported living, domiciliary care, nursing agencies and other healthcare providers. It brings staff scheduling, HR, care documentation and compliance tracking together in one secure system.",
   },
   {
-    question: "Does JAES Care support CQC compliance?",
+    question: "Does JAES Care support regulatory compliance?",
     answer:
-      "Yes. JAES Care includes role-based access controls, non-editable audit trails and structured care documentation designed to help organisations evidence compliance with CQC and other regulatory standards.",
+      "Yes. JAES Care includes role-based access controls, non-editable audit trails and structured care documentation designed to help organisations meet regulatory and organisational compliance requirements.",
   },
   {
     question: "Can staff use JAES Care on their phones?",
@@ -198,7 +198,7 @@ export default function Home() {
   const pageTitle =
     "JAES Care | Care Management, Workforce Management & Compliance Platform";
   const pageDescription =
-    "JAES Care is a secure cloud-based platform for supported living, domiciliary care, and nursing agencies. Manage staff, shifts, HR, CQC compliance, and real-time care monitoring.";
+    "JAES Care is a secure cloud-based platform for supported living, domiciliary care, and nursing agencies. Manage staff, shifts, HR, regulatory compliance, and real-time care monitoring.";
 
   // Technical Structured Data Schemas
   const organizationSchema = {
@@ -275,7 +275,7 @@ export default function Home() {
         <meta name="description" content={pageDescription} />
         <meta
           name="keywords"
-          content="JAES Care, care management software, workforce management, healthcare software, domiciliary care software, supported living software, HR management, staff scheduling, CQC compliance, hourly check-ins"
+          content="JAES Care, care management software, workforce management, healthcare software, domiciliary care software, supported living software, HR management, staff scheduling, regulatory compliance, hourly check-ins"
         />
         <meta name="author" content="JAES Solutions" />
         <meta name="theme-color" content="#38bdf8" />
@@ -326,8 +326,8 @@ export default function Home() {
 
         <div className="relative z-10 flex flex-col min-h-screen">
           {/* Header Navigation Module */}
-          <header className="sticky top-0 z-[100] h-20 border-b border-black/10 dark:border-white/10 backdrop-blur-md bg-white/80 dark:bg-[#050505]/80 flex items-center transition-all duration-300">
-            <div className="max-w-7xl w-full mx-auto px-6 flex items-center justify-between">
+          <header className="fixed top-0 left-0 right-0 z-[1000] h-16 md:h-20 border-b border-white/15 dark:border-white/10 bg-white/55 dark:bg-[#050505]/45 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45 dark:supports-[backdrop-filter]:bg-[#050505]/40 shadow-lg shadow-sky-500/5 flex items-center transition-all duration-300">
+            <div className="max-w-7xl w-full mx-auto px-4 md:px-6 flex items-center justify-between">
               <a
                 href="#home"
                 className="flex items-center group"
@@ -336,12 +336,12 @@ export default function Home() {
                 <img
                   src={carelogoLight}
                   alt="JAES Care logo"
-                  className="h-16 w-auto object-contain block dark:hidden transition-transform duration-300 group-hover:scale-105"
+                  className="h-14 md:h-16 w-auto object-contain block dark:hidden transition-transform duration-300 group-hover:scale-105"
                 />
                 <img
                   src={carelogo}
                   alt="JAES Care logo"
-                  className="h-16 w-auto object-contain hidden dark:block transition-transform duration-300 group-hover:scale-105"
+                  className="h-14 md:h-16 w-auto object-contain hidden dark:block transition-transform duration-300 group-hover:scale-105"
                 />
               </a>
 
@@ -364,7 +364,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((open) => !open)}
-                  className="md:hidden p-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="md:hidden p-2 rounded-lg border border-white/10 bg-white/10 dark:bg-white/5 backdrop-blur-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-300"
                   aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                   aria-expanded={mobileMenuOpen}
                   aria-controls="mobile-nav"
@@ -379,7 +379,7 @@ export default function Home() {
                     aria-haspopup="dialog"
                     aria-expanded={showLoginMenu}
                     aria-controls="login-menu-panel"
-                    className="px-6 py-2.5 text-sm rounded-xl bg-gradient-to-r from-sky-400 to-emerald-400 text-black font-semibold hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 transition-all duration-300"
+                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm rounded-xl bg-gradient-to-r from-sky-400 to-emerald-400 text-black font-semibold hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 transition-all duration-300"
                   >
                     Login
                   </button>
@@ -466,28 +466,33 @@ export default function Home() {
               <nav
                 id="mobile-nav"
                 aria-label="Mobile Navigation"
-                className="md:hidden absolute top-full left-0 right-0 z-[90] bg-white/95 dark:bg-[#050505]/95 backdrop-blur-md border-b border-black/10 dark:border-white/10 px-6 py-6 flex flex-col gap-6 shadow-xl animate-in slide-in-from-top-2"
+                className="md:hidden absolute top-full left-3 right-3 mt-3 z-[1100] rounded-3xl border border-sky-400/20 bg-[#050b16]/95 dark:bg-[#050505]/95 backdrop-blur-3xl p-3 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-300"
               >
-                {NAV_LINKS.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-lg font-semibold text-gray-800 dark:text-gray-200 hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                {NAV_LINKS.map((link, idx) => (
+                  <>
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center rounded-2xl px-4 py-3 text-base font-semibold text-white dark:text-gray-100 hover:bg-sky-500/10 hover:text-sky-300 transition-all duration-300"
+                    >
+                      {link.label}
+                    </a>
+                    {link !== NAV_LINKS[NAV_LINKS.length - 1] && (
+                      <div className="mx-2 h-px bg-white/10" />
+                    )}
+                  </>
                 ))}
               </nav>
             )}
           </header>
 
           {/* Semantic Main Content Structure */}
-          <main id="main-content" className="flex-grow">
+          <main id="main-content" className="flex-grow pt-20 md:pt-24">
             {/* Hero Interactive UI Section */}
             <section
               id="home"
-              className="relative z-0 max-w-7xl mx-auto px-6 pt-24 pb-20 grid lg:grid-cols-2 gap-16 items-center"
+              className="relative z-0 max-w-7xl mx-auto px-6 pt-6 md:pt-24 pb-20 grid lg:grid-cols-2 gap-16 items-center"
             >
               <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200 dark:border-sky-400/20 bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-300 text-sm font-semibold mb-6 shadow-sm">
@@ -504,8 +509,8 @@ export default function Home() {
 
                 <p className="text-gray-600 dark:text-gray-400 text-lg md:text-xl leading-relaxed max-w-xl mb-10">
                   Secure cloud-based software helping healthcare providers
-                  manage staff, patients, shift scheduling, handovers, and CQC
-                  compliance from one intelligent dashboard.
+                  manage staff, patients, shift scheduling, handovers, and
+                  regulatory compliance from one intelligent dashboard.
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -727,8 +732,8 @@ export default function Home() {
               </div>
             </section>
             {/* JAES Care Brand Statement */}
-            <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-[#030712] py-32">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,50%),rgba(56,189,248,0.22),transparent_240px)] transition-all duration-150 pointer-events-none" />
+            <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-[#030712] dark:via-[#050b16] dark:to-[#030712] py-32 transition-colors duration-300">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,50%),rgba(56,189,248,0.16),transparent_260px)] dark:bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,50%),rgba(56,189,248,0.22),transparent_240px)] transition-all duration-150 pointer-events-none" />
 
               <div
                 className="relative z-10 max-w-7xl mx-auto px-6 text-center"
@@ -739,15 +744,15 @@ export default function Home() {
                   target.style.setProperty("--y", `${e.clientY - rect.top}px`);
                 }}
               >
-                <p className="uppercase tracking-[0.4em] text-sky-400 font-semibold mb-6">
+                <p className="uppercase tracking-[0.4em] text-sky-600 dark:text-sky-400 font-semibold mb-6">
                   Built for Modern Care Providers
                 </p>
 
-                <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black tracking-tight leading-none bg-gradient-to-r from-white via-sky-300 to-emerald-300 bg-clip-text text-transparent select-none transition-transform duration-300 hover:scale-[1.02]">
+                <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black tracking-tight leading-none bg-gradient-to-r from-slate-900 via-sky-600 to-emerald-600 dark:from-white dark:via-sky-300 dark:to-emerald-300 bg-clip-text text-transparent select-none transition-transform duration-300 hover:scale-[1.02]">
                   JAES CARE
                 </h2>
 
-                <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-gray-300 leading-relaxed">
+                <p className="mt-8 max-w-3xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
                   Secure care management, workforce management, compliance and
                   documentation—built to help care organisations deliver
                   exceptional care with confidence.
@@ -758,7 +763,7 @@ export default function Home() {
             {/* Corporate Tier Packages Section */}
             <section
               id="pricing"
-              className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20"
+              className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20 mt-10"
             >
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 dark:border-emerald-300/20 bg-emerald-50 dark:bg-emerald-300/10 text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-6">
@@ -860,7 +865,7 @@ export default function Home() {
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="text-emerald-500" size={20} />{" "}
-                      Advanced CQC Reporting
+                      Advanced Compliance Reporting
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="text-emerald-500" size={20} />{" "}
@@ -1200,21 +1205,21 @@ export default function Home() {
 
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
               {/* Identity Pillar */}
-              <div className="space-y-6">
+              <div className="space-y-2">
                 <a
                   href="#home"
-                  className="inline-block"
+                  className="inline-block leading-none"
                   aria-label="JAES Care home"
                 >
                   <img
                     src={carelogoLight}
                     alt="JAES Care logo"
-                    className="h-12 w-auto block dark:hidden"
+                    className="h-24 w-auto block dark:hidden"
                   />
                   <img
                     src={carelogo}
                     alt="JAES Care logo"
-                    className="h-12 w-auto hidden dark:block"
+                    className="h-24 w-auto hidden dark:block"
                   />
                 </a>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -1243,23 +1248,23 @@ export default function Home() {
                       href="#pricing"
                       className="text-gray-600 dark:text-gray-400 hover:text-sky-500 transition-colors"
                     >
-                      Pricing & Plans
+                      Pricing
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#"
+                      href="#features"
                       className="text-gray-600 dark:text-gray-400 hover:text-sky-500 transition-colors"
                     >
-                      CQC Compliance
+                      Compliance & Security
                     </a>
                   </li>
                   <li>
                     <a
-                      href="#"
+                      href="#features"
                       className="text-gray-600 dark:text-gray-400 hover:text-sky-500 transition-colors"
                     >
-                      Security & Trust
+                      Documentation
                     </a>
                   </li>
                 </ul>

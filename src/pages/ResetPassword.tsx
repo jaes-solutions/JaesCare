@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, Lock, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
@@ -8,9 +8,8 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    document.documentElement.classList.contains("dark"),
-  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const {
@@ -69,29 +68,11 @@ export default function ResetPassword() {
     navigate("/login", { replace: true });
   };
 
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle("dark");
-    setDarkMode(document.documentElement.classList.contains("dark"));
-  };
-
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-white via-slate-100 to-slate-300 dark:from-[#050a11] dark:via-[#11161d] dark:to-[#050a11] transition-colors duration-500">
       {/* Decorative blurred glows */}
       <div className="pointer-events-none absolute -top-40 -left-32 w-96 h-96 rounded-full bg-sky-400 opacity-30 blur-3xl dark:opacity-40 dark:bg-sky-500" />
       <div className="pointer-events-none absolute -bottom-40 -right-32 w-96 h-96 rounded-full bg-emerald-300 opacity-20 blur-3xl dark:opacity-30 dark:bg-emerald-400" />
-      {/* Floating theme toggle */}
-      <button
-        className="fixed top-6 right-6 z-20 rounded-full bg-white/80 shadow-md dark:bg-[#10151c]/80 backdrop-blur p-2 transition hover:scale-105"
-        aria-label="Toggle theme"
-        onClick={toggleTheme}
-        type="button"
-      >
-        {darkMode ? (
-          <Sun className="w-6 h-6 text-sky-500" />
-        ) : (
-          <Moon className="w-6 h-6 text-sky-600" />
-        )}
-      </button>
       {/* Glassmorphism Card */}
       <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-300/40 dark:border-slate-700/70 bg-white/80 dark:bg-[#10151c]/80 shadow-2xl backdrop-blur-2xl p-8 pt-10">
         {/* Logos */}
@@ -105,12 +86,7 @@ export default function ResetPassword() {
           alt="JAES Care Logo Light"
           className="block dark:hidden h-14 mx-auto"
         />
-        {/* Shield icon in circle */}
-        <div className="flex justify-center mt-4 mb-2">
-          <div className="bg-gradient-to-br from-sky-400 to-cyan-400 p-2 rounded-full shadow-lg">
-            <ShieldCheck className="w-7 h-7 text-white" />
-          </div>
-        </div>
+
         {/* Heading */}
         <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-white mt-2">
           Reset Password
@@ -120,29 +96,67 @@ export default function ResetPassword() {
         </p>
         {/* Password Inputs */}
         <div className="mt-8 space-y-5">
-          <div className="flex items-center bg-white/50 dark:bg-[#151b23]/60 backdrop-blur rounded-xl border border-slate-300/40 dark:border-slate-700/60 px-3 py-2 shadow-sm">
-            <Lock className="w-5 h-5 text-sky-400 mr-3" />
-            <input
-              type="password"
-              placeholder="New Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 rounded-xl px-2 py-2"
-              autoComplete="new-password"
-              disabled={loading}
-            />
+          <div>
+            <p className="mb-2 ml-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              Enter Password
+            </p>
+            <div className="flex items-center rounded-2xl border-2 border-sky-400 bg-white/50 dark:bg-[#151b23]/60 backdrop-blur-xl px-4 py-3 shadow-[0_0_25px_rgba(14,165,233,0.25)] focus-within:shadow-[0_0_30px_rgba(14,165,233,0.45)] focus-within:border-sky-400 transition-all">
+              <Lock className="w-5 h-5 text-sky-400 mr-3" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="New Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-0 rounded-xl px-2 py-2"
+                autoComplete="new-password"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="ml-2 p-1 text-slate-500 hover:text-sky-500 focus:outline-none"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center bg-white/50 dark:bg-[#151b23]/60 backdrop-blur rounded-xl border border-slate-300/40 dark:border-slate-700/60 px-3 py-2 shadow-sm">
-            <Lock className="w-5 h-5 text-sky-400 mr-3" />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400 rounded-xl px-2 py-2"
-              autoComplete="new-password"
-              disabled={loading}
-            />
+          <div>
+            <p className="mb-2 ml-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              Re-enter Password
+            </p>
+            <div className="flex items-center rounded-2xl border-2 border-sky-400 bg-white/50 dark:bg-[#151b23]/60 backdrop-blur-xl px-4 py-3 shadow-[0_0_25px_rgba(14,165,233,0.25)] focus-within:shadow-[0_0_30px_rgba(14,165,233,0.45)] focus-within:border-sky-400 transition-all">
+              <Lock className="w-5 h-5 text-sky-400 mr-3" />
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-0 rounded-xl px-2 py-2"
+                autoComplete="new-password"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="ml-2 p-1 text-slate-500 hover:text-sky-500 focus:outline-none"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
           <button
             onClick={handleUpdatePassword}
