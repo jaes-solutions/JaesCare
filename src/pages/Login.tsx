@@ -17,16 +17,23 @@ export default function Login() {
       return;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+    const redirectUrl = new URL(
+      "/reset-password",
+      window.location.origin,
+    ).toString();
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: redirectUrl,
     });
 
     if (error) {
-      alert("Unable to send reset email");
+      alert(error.message);
       return;
     }
 
-    alert("Password reset email sent");
+    alert(
+      "If an account exists for this email address, a password reset link has been sent.",
+    );
   };
 
   const handleLogin = async (e: React.FormEvent) => {
