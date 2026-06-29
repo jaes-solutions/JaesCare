@@ -468,7 +468,7 @@ export default function Home() {
                 aria-label="Mobile Navigation"
                 className="md:hidden absolute top-full left-3 right-3 mt-3 z-[1100] rounded-3xl border border-sky-400/20 bg-[#050b16]/95 dark:bg-[#050505]/95 backdrop-blur-3xl p-3 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-300"
               >
-                {NAV_LINKS.map((link, idx) => (
+                {NAV_LINKS.map((link) => (
                   <>
                     <a
                       key={link.href}
