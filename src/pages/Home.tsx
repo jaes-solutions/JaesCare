@@ -297,7 +297,10 @@ export default function Home() {
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
         <meta name="twitter:image" content={carelogo} />
-
+        <meta
+          name="google-site-verification"
+          content="xTGHwdAevpdtxiM80cd725PooKY8UqqsG8akNbNyEIk"
+        />
         <meta
           name="robots"
           content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
