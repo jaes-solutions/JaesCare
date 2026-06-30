@@ -133,15 +133,6 @@ const AdminIncidents: React.FC = () => {
     () => new Set(incidents.map((i) => i.category)).size,
     [incidents],
   );
-  const thisMonthCount = useMemo(() => {
-    const now = new Date();
-    return incidents.filter((i) => {
-      const d = new Date(i.created_at);
-      return (
-        d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-      );
-    }).length;
-  }, [incidents]);
 
   // PDF download function
   function downloadIncidentPdf(incident: IncidentRecord) {

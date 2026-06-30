@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   User,
   Clock3,
-  ClipboardCheck,
   AlertTriangle,
   Settings,
   LogOut,

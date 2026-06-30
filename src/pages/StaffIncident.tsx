@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import StaffSidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
-import { User, Clock3, FileText, Search, Plus } from "lucide-react";
+import { User, FileText, Search, Plus } from "lucide-react";
 
 interface Shift {
   id: string;
