@@ -13,10 +13,7 @@ interface Shift {
   status: string;
   start_time: string;
   end_time: string;
-  patient?: {
-    first_name: string;
-    last_name: string;
-  };
+  patient_name: string;
 }
 
 interface Incident {
@@ -25,16 +22,16 @@ interface Incident {
   incident_date: string;
   incident_time: string;
   status?: string;
-  description: string;
+  resident_name: string;
+  staff_name: string;
+  staff_id: string;
+  patient_id: string;
+  incident_description: string;
   created_at: string;
-  reported_by: {
-    first_name: string;
-    last_name: string;
-  };
 }
 
 const CARD_STYLE =
-  "rounded-xl bg-white dark:bg-slate-800 shadow p-6 flex flex-col gap-2 border border-slate-100 dark:border-slate-700";
+  "rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 shadow-xl p-6 flex flex-col gap-2";
 const CARD_HEADER_STYLE = "text-slate-600 dark:text-slate-300 text-xs mb-1";
 const CARD_TITLE_STYLE =
   "font-semibold text-base text-slate-900 dark:text-slate-100";
@@ -60,7 +57,8 @@ const StaffIncident: React.FC = () => {
   const [search, setSearch] = useState("");
   const [totalIncidents, setTotalIncidents] = useState(0);
   const navigate = useNavigate();
-
+  const [staffName, setStaffName] = useState("");
+  const [staffRole, setStaffRole] = useState("");
   // Fetch user and active shift on mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -72,26 +70,26 @@ const StaffIncident: React.FC = () => {
         setLoading(false);
         return;
       }
-      // Find today's date range
-      const today = new Date();
-      const isoToday = today.toISOString().slice(0, 10);
+      // Fetch staff profile for navbar
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("full_name, role")
+        .eq("id", session.user.id)
+        .single();
+      if (!profileError && profile) {
+        setStaffName(profile.full_name ?? "");
+        setStaffRole(profile.role ?? "");
+      }
+      // Today's date (used by the shifts table)
+      const today = new Date().toISOString().split("T")[0];
       // Query for active shift
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
-        .select(
-          `
-            *,
-            patient:patient_id (
-              first_name,
-              last_name
-            )
-          `,
-        )
+        .select("*")
         .eq("staff_id", session.user.id)
+        .eq("shift_date", today)
         .eq("status", "active")
-        .lte("start_time", isoToday + "T23:59:59")
-        .gte("end_time", isoToday + "T00:00:00")
-        .single();
+        .maybeSingle();
       if (shiftError || !shiftData) {
         setActiveShift(null);
         setLoading(false);
@@ -114,15 +112,7 @@ const StaffIncident: React.FC = () => {
       // Only for assigned patient and organization
       const { data: incidentData, error: incidentError } = await supabase
         .from("incidents")
-        .select(
-          `
-            *,
-            reported_by (
-              first_name,
-              last_name
-            )
-          `,
-        )
+        .select("*")
         .eq("patient_id", activeShift.patient_id)
         .eq("organization_id", activeShift.organization_id)
         .order("created_at", { ascending: false });
@@ -146,7 +136,8 @@ const StaffIncident: React.FC = () => {
     return incidents.filter((i) => {
       return (
         (i.category && i.category.toLowerCase().includes(lower)) ||
-        (i.description && i.description.toLowerCase().includes(lower)) ||
+        (i.incident_description &&
+          i.incident_description.toLowerCase().includes(lower)) ||
         (i.status && i.status.toLowerCase().includes(lower)) ||
         (i.incident_date && i.incident_date.includes(lower))
       );
@@ -157,17 +148,39 @@ const StaffIncident: React.FC = () => {
   const truncate = (text: string, len: number = 80) =>
     text.length > len ? text.slice(0, len) + "…" : text;
 
-  return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
-      <StaffSidebar onLogout={() => supabase.auth.signOut()} />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-1 px-4 md:px-8 py-8 max-w-4xl mx-auto w-full">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-sky-500 font-bold text-lg">Loading…</div>
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-white dark:bg-[#03060b] transition-colors">
+        <StaffSidebar onLogout={() => supabase.auth.signOut()} />
+
+        <div className="flex-1 flex flex-col min-h-screen lg:pl-64 xl:pl-64">
+          <Navbar name={staffName} role={staffRole} />
+
+          <main className="flex-1 flex items-center justify-center px-4 md:px-8 lg:px-10 xl:px-12 pt-24 pb-8 max-w-7xl mx-auto w-full">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
+                <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400">
+                Loading data, please wait...
+              </p>
             </div>
-          ) : !activeShift ? (
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-white dark:bg-[#03060b] transition-colors">
+      <StaffSidebar onLogout={() => supabase.auth.signOut()} />
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 xl:pl-64">
+        <Navbar name={staffName} role={staffRole} />
+        <main className="flex-1 w-full px-4 md:px-8 lg:px-10 xl:px-12 pt-24 pb-8 max-w-7xl mx-auto">
+          {!activeShift ? (
             <div className="flex flex-col items-center justify-center h-96">
               <div className={`${CARD_STYLE} items-center w-full max-w-md`}>
                 <FileText className="text-3xl text-sky-400 mb-2" />
@@ -193,7 +206,7 @@ const StaffIncident: React.FC = () => {
                 </div>
                 <button
                   className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-2 rounded-lg shadow transition disabled:opacity-50"
-                  onClick={() => navigate("/staff/report-incident")}
+                  onClick={() => navigate("/staffIncidentReporting")}
                 >
                   <Plus /> Report Incident
                 </button>
@@ -206,25 +219,14 @@ const StaffIncident: React.FC = () => {
                     Assigned Resident
                   </div>
                   <div className={CARD_TITLE_STYLE}>
-                    {activeShift.patient
-                      ? `${activeShift.patient.first_name} ${activeShift.patient.last_name}`
-                      : "—"}
+                    {activeShift.patient_name}
                   </div>
                 </div>
-                <div className={CARD_STYLE}>
-                  <div className={CARD_HEADER_STYLE}>
-                    <Clock3 className="inline mr-1 text-sky-400" />
-                    Active Shift Time
-                  </div>
-                  <div className={CARD_TITLE_STYLE}>
-                    {formatUKTime(activeShift.start_time)} -{" "}
-                    {formatUKTime(activeShift.end_time, true)}
-                  </div>
-                </div>
+
                 <div className={CARD_STYLE}>
                   <div className={CARD_HEADER_STYLE}>
                     <FileText className="inline mr-1 text-sky-400" />
-                    Total Incidents This Shift
+                    Total Incidents for the Resident
                   </div>
                   <div className={CARD_TITLE_STYLE}>{totalIncidents}</div>
                 </div>
@@ -237,7 +239,7 @@ const StaffIncident: React.FC = () => {
                   </span>
                   <input
                     type="text"
-                    className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 w-full focus:ring-2 focus:ring-sky-400 outline-none transition"
+                    className="pl-10 pr-4 py-2 rounded-lg border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 text-slate-900 dark:text-slate-100 w-full focus:ring-2 focus:ring-sky-400 outline-none transition"
                     placeholder="Search incidents…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -283,15 +285,19 @@ const StaffIncident: React.FC = () => {
                         </div>
                       </div>
                       <div className="mt-2 text-slate-800 dark:text-slate-100">
-                        {truncate(incident.description, 160)}
+                        {truncate(incident.incident_description, 160)}
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mt-4 text-xs text-slate-500 dark:text-slate-400">
                         <span>
                           Reported by:{" "}
                           <span className="font-medium">
-                            {incident.reported_by
-                              ? `${incident.reported_by.first_name} ${incident.reported_by.last_name}`
-                              : "—"}
+                            {incident.staff_name}
+                          </span>
+                        </span>
+                        <span>
+                          Resident:{" "}
+                          <span className="font-medium">
+                            {incident.resident_name}
                           </span>
                         </span>
                         <span>

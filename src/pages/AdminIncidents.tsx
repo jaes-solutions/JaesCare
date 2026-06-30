@@ -183,20 +183,46 @@ const AdminIncidents: React.FC = () => {
       }, 300);
     }
   }
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-white dark:bg-[#03060b] transition-colors">
+        <AdminSidebar onLogout={() => {}} />
 
+        <div className="flex-1 flex flex-col min-h-screen lg:pl-64 xl:pl-64">
+          <Navbar name={adminName} role="Admin" />
+
+          <main className="flex-1 flex items-center justify-center px-4 md:px-8 lg:px-10 xl:px-12 pt-24 pb-8 max-w-7xl mx-auto w-full">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
+                <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+              </div>
+
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Preparing data..
+                </h2>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="min-h-screen bg-[#050a11]">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050a11] transition-colors">
       <AdminSidebar onLogout={() => {}} />
 
       <div className="lg:ml-[260px] min-h-screen">
         <Navbar name={adminName} role="Admin" />
 
-        <main className="pt-32 px-4 md:px-6 pb-6 text-white">
+        <main className="pt-32 px-4 md:px-6 pb-6 text-slate-900 dark:text-white transition-colors">
           <div className="max-w-7xl mr-auto ml-0">
             {/* Header Card */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-              <div className="bg-[#0b1018] border border-[#1e2632] rounded-[24px] px-6 py-5 shadow">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <div className="bg-white dark:bg-[#0b1018] border border-slate-200 dark:border-[#1e2632] rounded-[24px] px-6 py-5 shadow transition-colors">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white transition-colors">
                   Incident Management
                 </h1>
                 <p className="text-sky-400 mt-2 text-base">
@@ -218,37 +244,38 @@ const AdminIncidents: React.FC = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-            <div className="bg-[#11161d] border border-[#1e2632] rounded-[24px] px-6 py-6 flex items-center">
+            <div className="bg-white dark:bg-[#11161d] border border-slate-200 dark:border-[#1e2632] rounded-[24px] px-6 py-6 flex items-center transition-colors">
               <FileText className="w-8 h-8 text-sky-400 mr-4" />
               <div>
-                <div className="text-2xl font-bold">{totalIncidents}</div>
-                <div className="text-slate-400">Total Incidents</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">
+                  {totalIncidents}
+                </div>
+                <div className="text-slate-500 dark:text-slate-400 transition-colors">
+                  Total Incidents
+                </div>
               </div>
             </div>
-            <div className="bg-[#11161d] border border-[#1e2632] rounded-[24px] px-6 py-6 flex items-center">
+            <div className="bg-white dark:bg-[#11161d] border border-slate-200 dark:border-[#1e2632] rounded-[24px] px-6 py-6 flex items-center transition-colors">
               <AlertTriangle className="w-8 h-8 text-sky-400 mr-4" />
               <div>
-                <div className="text-2xl font-bold">{uniqueCategories}</div>
-                <div className="text-slate-400">Categories</div>
-              </div>
-            </div>
-            <div className="bg-[#11161d] border border-[#1e2632] rounded-[24px] px-6 py-6 flex items-center">
-              <Download className="w-8 h-8 text-sky-400 mr-4" />
-              <div>
-                <div className="text-2xl font-bold">{thisMonthCount}</div>
-                <div className="text-slate-400">This Month</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white transition-colors">
+                  {uniqueCategories}
+                </div>
+                <div className="text-slate-500 dark:text-slate-400 transition-colors">
+                  Categories
+                </div>
               </div>
             </div>
           </div>
 
           {/* Main Card */}
-          <div className="bg-[#0b1018] border border-[#1e2632] rounded-[24px] px-4 py-6 shadow">
+          <div className="bg-white dark:bg-[#0b1018] border border-slate-200 dark:border-[#1e2632] rounded-[24px] px-4 py-6 shadow transition-colors">
             {/* Search Bar */}
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center w-full md:w-1/3 bg-[#11161d] border border-[#232d3a] rounded-[24px] px-4 py-2">
-                <Search className="w-5 h-5 text-slate-400 mr-2" />
+              <div className="flex items-center w-full md:w-1/3 bg-slate-100 dark:bg-[#11161d] border border-slate-200 dark:border-[#232d3a] rounded-[24px] px-4 py-2 transition-colors">
+                <Search className="w-5 h-5 text-slate-500 dark:text-slate-400 mr-2" />
                 <input
-                  className="bg-transparent outline-none w-full text-white placeholder:text-slate-400"
+                  className="bg-transparent outline-none w-full text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-colors"
                   placeholder="Search resident, staff, category..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -256,35 +283,6 @@ const AdminIncidents: React.FC = () => {
                 />
               </div>
             </div>
-
-            {/* Loading */}
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <svg
-                  className="animate-spin h-10 w-10 text-sky-400 mb-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8z"
-                  ></path>
-                </svg>
-                <div className="text-slate-400 text-lg">
-                  Loading incidents...
-                </div>
-              </div>
-            )}
 
             {/* Error */}
             {error && (
@@ -297,7 +295,7 @@ const AdminIncidents: React.FC = () => {
             {!loading && filteredIncidents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20">
                 <AlertTriangle className="w-16 h-16 text-slate-600 mb-4" />
-                <div className="text-slate-400 text-xl font-semibold">
+                <div className="text-slate-500 dark:text-slate-400 text-xl font-semibold transition-colors">
                   No incidents found
                 </div>
               </div>
@@ -306,9 +304,9 @@ const AdminIncidents: React.FC = () => {
             {/* Table */}
             {!loading && filteredIncidents.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[#1e2632]">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-[#1e2632] transition-colors">
                   <thead>
-                    <tr className="text-left text-slate-400 text-sm">
+                    <tr className="text-left text-slate-500 dark:text-slate-400 text-sm transition-colors">
                       <th className="py-3 px-2">Resident</th>
                       <th className="py-3 px-2">Staff</th>
                       <th className="py-3 px-2">Category</th>
@@ -321,15 +319,21 @@ const AdminIncidents: React.FC = () => {
                     {filteredIncidents.map((incident) => (
                       <tr
                         key={incident.id}
-                        className="hover:bg-[#11161d] transition"
+                        className="hover:bg-slate-100 dark:hover:bg-[#11161d] transition-colors"
                       >
-                        <td className="py-3 px-2 font-medium text-white">
+                        <td className="py-3 px-2 font-medium text-slate-900 dark:text-white transition-colors">
                           {incident.resident_name}
                         </td>
-                        <td className="py-3 px-2">{incident.staff_name}</td>
-                        <td className="py-3 px-2">{incident.category}</td>
-                        <td className="py-3 px-2">{incident.outcome}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
+                          {incident.staff_name}
+                        </td>
+                        <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
+                          {incident.category}
+                        </td>
+                        <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
+                          {incident.outcome}
+                        </td>
+                        <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
                           {new Date(incident.created_at).toLocaleDateString()}
                         </td>
                         <td className="py-3 px-2">
@@ -342,7 +346,7 @@ const AdminIncidents: React.FC = () => {
                             View
                           </button>
                           <button
-                            className="inline-flex items-center px-3 py-1.5 rounded-[16px] bg-[#11161d] border border-sky-400 text-sky-400 hover:bg-sky-400 hover:text-[#050a11] font-semibold transition"
+                            className="inline-flex items-center px-3 py-1.5 rounded-[16px] bg-white dark:bg-[#11161d] border border-sky-400 text-sky-400 hover:bg-sky-400 hover:text-[#050a11] font-semibold transition-colors"
                             title="Download PDF"
                             onClick={() => downloadIncidentPdf(incident)}
                           >
@@ -359,56 +363,72 @@ const AdminIncidents: React.FC = () => {
 
             {/* Details Panel */}
             {selectedIncident && (
-              <div className="mt-8 bg-[#11161d] border border-[#232d3a] rounded-[24px] px-6 py-6 shadow-lg relative">
+              <div className="mt-8 bg-white dark:bg-[#11161d] border border-slate-200 dark:border-[#232d3a] rounded-[24px] px-6 py-6 shadow-lg relative transition-colors">
                 <button
-                  className="absolute top-4 right-4 text-slate-400 hover:text-sky-400 text-lg"
+                  className="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-sky-400 text-lg transition-colors"
                   onClick={() => setSelectedIncident(null)}
                   title="Close"
                 >
                   ×
                 </button>
-                <h2 className="text-xl font-bold mb-4 text-white">
+                <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white transition-colors">
                   Incident #{selectedIncident.id} Details
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-base">
                   <div>
-                    <span className="text-slate-400">Resident Name:</span>
-                    <div className="text-white font-semibold">
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Resident Name:
+                    </span>
+                    <div className="text-slate-900 dark:text-white font-semibold transition-colors">
                       {selectedIncident.resident_name}
                     </div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Staff Name:</span>
-                    <div className="text-white font-semibold">
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Staff Name:
+                    </span>
+                    <div className="text-slate-900 dark:text-white font-semibold transition-colors">
                       {selectedIncident.staff_name}
                     </div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Category:</span>
-                    <div className="text-white">
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Category:
+                    </span>
+                    <div className="text-slate-900 dark:text-white transition-colors">
                       {selectedIncident.category}
                     </div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Subcategory:</span>
-                    <div className="text-white">
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Subcategory:
+                    </span>
+                    <div className="text-slate-900 dark:text-white transition-colors">
                       {selectedIncident.subcategory}
                     </div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Outcome:</span>
-                    <div className="text-white">{selectedIncident.outcome}</div>
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Outcome:
+                    </span>
+                    <div className="text-slate-900 dark:text-white transition-colors">
+                      {selectedIncident.outcome}
+                    </div>
                   </div>
                   <div>
-                    <span className="text-slate-400">Date:</span>
-                    <div className="text-white">
+                    <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                      Date:
+                    </span>
+                    <div className="text-slate-900 dark:text-white transition-colors">
                       {new Date(selectedIncident.created_at).toLocaleString()}
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
-                  <span className="text-slate-400">Incident Description:</span>
-                  <div className="bg-[#0b1018] border border-[#232d3a] rounded-[16px] px-4 py-3 mt-2 text-white whitespace-pre-wrap">
+                  <span className="text-slate-500 dark:text-slate-400 transition-colors">
+                    Incident Description:
+                  </span>
+                  <div className="bg-slate-50 dark:bg-[#0b1018] border border-slate-200 dark:border-[#232d3a] rounded-[16px] px-4 py-3 mt-2 text-slate-900 dark:text-white whitespace-pre-wrap transition-colors">
                     {selectedIncident.incident_description}
                   </div>
                 </div>

@@ -112,22 +112,55 @@ export default function AdminPatients() {
 
       setPatientCheckins(checkins || []);
 
-      // Load handovers for the patient
+      // Load handovers for the patient, filtered by admin's organization
+      // 1. Get session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setPatientHandovers([]);
+        return;
+      }
+      // 2. Get admin profile to get organization_id
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", session.user.id)
+        .single();
+      if (profileError || !profile?.organization_id) {
+        setPatientHandovers([]);
+        return;
+      }
+      // 3. Query handovers where shift.patient_id and shift.organization_id match
+      const { data: residentShifts } = await supabase
+        .from("shifts")
+        .select("id")
+        .eq("organization_id", profile.organization_id)
+        .eq("patient_id", selectedPatient.id);
+
+      if (!residentShifts || residentShifts.length === 0) {
+        setPatientHandovers([]);
+        return;
+      }
+
+      const shiftIds = residentShifts.map((shift) => shift.id);
+
       const { data: handovers } = await supabase
         .from("handovers")
         .select(
           `
-          *,
-          shifts!handovers_shift_id_fkey (
-            patient_id,
-            shift_date,
-            start_time,
-            end_time,
-            staff_name
-          )
-        `,
+            *,
+            shifts!handovers_shift_id_fkey (
+              patient_id,
+              organization_id,
+              shift_date,
+              start_time,
+              end_time,
+              staff_name
+            )
+          `,
         )
-        .eq("shifts.patient_id", selectedPatient.id)
+        .in("shift_id", shiftIds)
         .order("created_at", { ascending: false });
 
       setPatientHandovers(handovers || []);
@@ -220,6 +253,7 @@ export default function AdminPatients() {
   return (
     <div className="min-h-screen bg-white dark:bg-[#050a11] text-black dark:text-white transition-colors duration-300">
       <AdminSidebar onLogout={handleLogout} />
+      <Navbar name={adminName} role="Admin" />
 
       <div className="lg:ml-[280px]">
         <div className="pt-32 px-4 md:px-6 pb-6">
@@ -230,14 +264,17 @@ export default function AdminPatients() {
                   Resident Management
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  View resident <Navbar name={adminName} role="Admin" />
-                  profiles, care activity and assigned staff.
+                  View resident profiles, care activity and assigned staff.
                 </p>
               </div>
 
               <div className="px-5 py-3 rounded-2xl bg-sky-400/10 border border-sky-400/20">
-                <p className="text-sky-300 text-sm">Total Residents</p>
-                <p className="text-2xl font-bold">{patients.length}</p>
+                <p className="text-sky-300 text-center text-sm">
+                  Total Residents
+                </p>
+                <p className="text-2xl text-center font-bold">
+                  {patients.length}
+                </p>
               </div>
             </div>
 
@@ -257,7 +294,7 @@ export default function AdminPatients() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)] gap-6 items-start">
-                  <div className="xl:sticky xl:top-[120px] rounded-[18px] border border-black/10 dark:border-white/10 bg-gray-100 dark:bg-[#11161d] p-3 h-fit min-h-[300px]">
+                  <div className="xl:sticky xl:top-[120px] rounded-[18px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-3 h-fit min-h-[300px]">
                     <h3 className="text-base font-semibold mb-3">Residents</h3>
                     <div className="space-y-2 h-full overflow-y-auto pr-2">
                       {patients.map((patient) => (
@@ -277,7 +314,7 @@ export default function AdminPatients() {
                   </div>
 
                   <div className="flex flex-col gap-6 min-w-0 overflow-hidden">
-                    <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#11161d] p-8 overflow-hidden min-w-0 max-w-full">
+                    <div className="rounded-[24px] border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-8 overflow-hidden min-w-0 max-w-full">
                       {selectedPatient ? (
                         <>
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -308,7 +345,7 @@ export default function AdminPatients() {
                             </div>
                           </div>
 
-                          <div className="xl:sticky xl:top-[120px] z-20 bg-white dark:bg-[#11161d] border-b border-black/10 dark:border-white/10 mb-8 pb-4">
+                          <div className="xl:sticky xl:top-[120px] z-20 border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] mb-8 pb-4">
                             <div className="flex gap-2 overflow-x-auto">
                               {[
                                 { id: "info", label: "Info" },
@@ -667,15 +704,31 @@ export default function AdminPatients() {
                                 </div>
                               </div>
                               <div className="mb-5">
-                                <input
-                                  type="text"
-                                  value={checkinSearch}
-                                  onChange={(e) =>
-                                    setCheckinSearch(e.target.value)
-                                  }
-                                  placeholder="Search by staff, status, date, notes..."
-                                  className="w-full rounded-2xl border border-sky-400/20 bg-white dark:bg-[#0b1018] px-5 py-3 text-black dark:text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
-                                />
+                                <div className="relative">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 pointer-events-none"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                  </svg>
+                                  <input
+                                    type="text"
+                                    value={checkinSearch}
+                                    onChange={(e) =>
+                                      setCheckinSearch(e.target.value)
+                                    }
+                                    placeholder="Search by staff, status, date, notes..."
+                                    className="w-full rounded-2xl border border-sky-400/20 bg-white dark:bg-[#0b1018] pl-12 pr-5 py-3 text-black dark:text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                                  />
+                                </div>
                               </div>
                               <div className="w-full overflow-hidden">
                                 <div

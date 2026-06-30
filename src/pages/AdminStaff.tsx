@@ -9,10 +9,29 @@ export default function AdminStaff() {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adminName, setAdminName] = useState("Admin");
+  const [activeTab, setActiveTab] = useState<
+    "info" | "shifts" | "checkins" | "handovers"
+  >("info");
+
+  const [organizationId, setOrganizationId] = useState("");
+  const [staffShifts, setStaffShifts] = useState<any[]>([]);
+  const [staffCheckins, setStaffCheckins] = useState<any[]>([]);
+  const [staffHandovers, setStaffHandovers] = useState<any[]>([]);
+  const [searchShifts, setSearchShifts] = useState("");
+  const [searchCheckins, setSearchCheckins] = useState("");
+  const [searchHandovers, setSearchHandovers] = useState("");
 
   useEffect(() => {
     loadStaff();
   }, []);
+
+  useEffect(() => {
+    if (!selectedStaff || !organizationId) return;
+
+    loadStaffShifts(selectedStaff.id, organizationId);
+    loadStaffCheckins(selectedStaff.id, organizationId);
+    loadStaffHandovers(selectedStaff.id, organizationId);
+  }, [selectedStaff, organizationId]);
 
   const loadStaff = async () => {
     setLoading(true);
@@ -34,6 +53,9 @@ export default function AdminStaff() {
 
     if (profile?.full_name) {
       setAdminName(profile.full_name);
+    }
+    if (profile?.organization_id) {
+      setOrganizationId(profile.organization_id);
     }
 
     if (profileError || !profile?.organization_id) {
@@ -62,6 +84,57 @@ export default function AdminStaff() {
     }
 
     setLoading(false);
+  };
+
+  const loadStaffShifts = async (staffId: string, organizationId: string) => {
+    const { data, error } = await supabase
+      .from("shifts")
+      .select("*")
+      .eq("staff_id", staffId)
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setStaffShifts(data || []);
+  };
+
+  const loadStaffCheckins = async (staffId: string, organizationId: string) => {
+    const { data, error } = await supabase
+      .from("checkins")
+      .select("*")
+      .eq("staff_id", staffId)
+      .eq("organization_id", organizationId)
+      .order("submitted_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setStaffCheckins(data || []);
+  };
+
+  const loadStaffHandovers = async (
+    staffId: string,
+    organizationId: string,
+  ) => {
+    const { data, error } = await supabase
+      .from("handovers")
+      .select("*")
+      .eq("staff_id", staffId)
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setStaffHandovers(data || []);
   };
 
   const saveStaff = async () => {
@@ -104,8 +177,23 @@ export default function AdminStaff() {
     });
   };
 
+  // Derived values for staff summary (Info tab)
+  const completedShifts = staffShifts.filter(
+    (shift) => shift.status?.toLowerCase() === "completed",
+  );
+
+  const totalHoursWorked = completedShifts.reduce((total, shift) => {
+    if (!shift.start_time || !shift.end_time) return total;
+
+    const start = new Date(`1970-01-01T${shift.start_time}`);
+    const end = new Date(`1970-01-01T${shift.end_time}`);
+
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return total + (hours > 0 ? hours : 0);
+  }, 0);
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0b0f14]">
+    <div className="min-h-screen bg-white dark:bg-[#03060b]">
       <AdminSidebar
         onLogout={() => {
           localStorage.clear();
@@ -117,9 +205,27 @@ export default function AdminStaff() {
         <Navbar name={adminName} role="admin" />
 
         <div className="pt-24 px-6 pb-6 max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6 text-black dark:text-white">
-            Staff Management
-          </h1>
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
+            {/* Left Side: Titles */}
+            <div>
+              <h1 className="text-3xl font-bold text-black dark:text-white mb-1">
+                Staff Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-base">
+                View staff profiles, shifts, check-ins and handovers.
+              </p>
+            </div>
+            {/* Right Side: Summary Card */}
+            <div className="rounded-2xl bg-white dark:bg-[#070c14] border border-black/10 dark:border-white/10 px-6 py-4 flex flex-col items-center min-w-[140px] shadow-sm">
+              <span className="text-xs uppercase text-sky-300 dark:text-sky-300 font-semibold tracking-wide mb-1">
+                Total Staff
+              </span>
+              <span className="text-2xl font-bold text-black dark:text-white">
+                {staff.length}
+              </span>
+            </div>
+          </div>
 
           {loading ? (
             <div className="min-h-[70vh] flex items-center justify-center">
@@ -139,9 +245,9 @@ export default function AdminStaff() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6 min-h-[calc(100vh-180px)]">
-              <div className="rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden bg-white dark:bg-[#11161d]">
+              <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] overflow-hidden">
                 <div className="p-4 border-b border-black/10 dark:border-white/10 font-semibold">
-                  Staff Members ({staff.length})
+                  Staff
                 </div>
 
                 <div className="overflow-y-auto max-h-[calc(100vh-260px)]">
@@ -163,100 +269,485 @@ export default function AdminStaff() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#11161d] p-6 overflow-x-hidden">
+              <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] p-6 overflow-x-hidden">
                 {selectedStaff ? (
                   <div className="space-y-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="text-2xl font-bold text-black dark:text-white">
-                          {selectedStaff.full_name}
-                        </h2>
-                        <p className="text-gray-500 mt-1">
-                          {selectedStaff.role}
-                        </p>
-                      </div>
+                    <div className="border-b border-black/10 dark:border-white/10 pb-5">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div>
+                          <p className="text-sm uppercase tracking-[0.2em] text-sky-500 font-semibold">
+                            Staff Profile
+                          </p>
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setEditing(!editing)}
-                          className="px-4 py-2 rounded-lg bg-sky-500 text-white"
-                        >
-                          {editing ? "Cancel" : "Edit"}
-                        </button>
+                          <h2 className="mt-1 text-3xl font-bold text-black dark:text-white">
+                            {selectedStaff.full_name}
+                          </h2>
 
-                        {editing && (
+                          <p className="mt-2 text-gray-500">
+                            {selectedStaff.role}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
                           <button
-                            onClick={saveStaff}
-                            className="px-4 py-2 rounded-lg bg-emerald-500 text-white"
+                            onClick={() => setEditing(!editing)}
+                            className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 transition text-white font-medium"
                           >
-                            Save
+                            {editing ? "Cancel" : "Edit Staff"}
                           </button>
-                        )}
+
+                          {editing && (
+                            <button
+                              onClick={saveStaff}
+                              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 transition text-white font-medium"
+                            >
+                              Save
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InfoCard
-                        title="Full Name"
-                        value={selectedStaff.full_name}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({ ...selectedStaff, full_name: v })
-                        }
-                      />
-                      <InfoCard title="Email" value={selectedStaff.email} />
-                      <InfoCard title="Role" value={selectedStaff.role} />
-                      <InfoCard
-                        title="Phone"
-                        value={selectedStaff.phone}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({ ...selectedStaff, phone: v })
-                        }
-                      />
-                      <InfoCard
-                        title="Address"
-                        value={selectedStaff.address}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({ ...selectedStaff, address: v })
-                        }
-                      />
-                      <InfoCard
-                        title="Emergency Contact"
-                        value={selectedStaff.emergency_contact_name}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({
-                            ...selectedStaff,
-                            emergency_contact_name: v,
-                          })
-                        }
-                      />
-                      <InfoCard
-                        title="Emergency Phone"
-                        value={selectedStaff.emergency_contact_phone}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({
-                            ...selectedStaff,
-                            emergency_contact_phone: v,
-                          })
-                        }
-                      />
-                      <InfoCard
-                        title="Gender"
-                        value={selectedStaff.gender}
-                        editable={editing}
-                        onChange={(v: string) =>
-                          setSelectedStaff({ ...selectedStaff, gender: v })
-                        }
-                      />
-                      <InfoCard
-                        title="Created"
-                        value={formatUKTime(selectedStaff.created_at)}
-                      />
+                    <div className="flex flex-wrap gap-2 border-b border-black/10 dark:border-white/10 pb-4">
+                      {[
+                        { key: "info", label: "Info" },
+                        { key: "shifts", label: "Shifts" },
+                        { key: "checkins", label: "Check-ins" },
+                        { key: "handovers", label: "Handovers" },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() =>
+                            setActiveTab(
+                              tab.key as
+                                | "info"
+                                | "shifts"
+                                | "checkins"
+                                | "handovers",
+                            )
+                          }
+                          className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                            activeTab === tab.key
+                              ? "bg-sky-500 text-white"
+                              : "bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
                     </div>
+
+                    {activeTab === "info" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InfoCard
+                          title="Full Name"
+                          value={selectedStaff.full_name}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({ ...selectedStaff, full_name: v })
+                          }
+                        />
+                        <InfoCard title="Email" value={selectedStaff.email} />
+                        <InfoCard title="Role" value={selectedStaff.role} />
+                        <InfoCard
+                          title="Phone"
+                          value={selectedStaff.phone}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({ ...selectedStaff, phone: v })
+                          }
+                        />
+                        <InfoCard
+                          title="Address"
+                          value={selectedStaff.address}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({ ...selectedStaff, address: v })
+                          }
+                        />
+                        <InfoCard
+                          title="Emergency Contact"
+                          value={selectedStaff.emergency_contact_name}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({
+                              ...selectedStaff,
+                              emergency_contact_name: v,
+                            })
+                          }
+                        />
+                        <InfoCard
+                          title="Emergency Phone"
+                          value={selectedStaff.emergency_contact_phone}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({
+                              ...selectedStaff,
+                              emergency_contact_phone: v,
+                            })
+                          }
+                        />
+                        <InfoCard
+                          title="Gender"
+                          value={selectedStaff.gender}
+                          editable={editing}
+                          onChange={(v: string) =>
+                            setSelectedStaff({ ...selectedStaff, gender: v })
+                          }
+                        />
+                        <InfoCard
+                          title="Created"
+                          value={formatUKTime(selectedStaff.created_at)}
+                        />
+                        {/* Additional staff summary info */}
+                        <InfoCard
+                          title="DBS Check"
+                          value={selectedStaff.dbs_check ?? "Not Recorded"}
+                        />
+                        <InfoCard
+                          title="Completed Shifts"
+                          value={completedShifts.length}
+                        />
+                        <InfoCard
+                          title="Total Hours Worked"
+                          value={`${totalHoursWorked.toFixed(1)} hrs`}
+                        />
+                      </div>
+                    )}
+
+                    {activeTab === "shifts" && (
+                      <div className="space-y-5">
+                        <input
+                          type="text"
+                          value={searchShifts}
+                          onChange={(e) => setSearchShifts(e.target.value)}
+                          placeholder="Search shifts..."
+                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+
+                        <div className="space-y-4">
+                          {staffShifts
+                            .filter((shift) => {
+                              const q = searchShifts.toLowerCase();
+                              return (
+                                (shift.patient_name || "")
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                (shift.shift_date || "")
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                (shift.status || "").toLowerCase().includes(q)
+                              );
+                            })
+                            .map((shift) => (
+                              <details
+                                key={shift.id}
+                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              >
+                                <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                  <div>
+                                    <p className="font-semibold text-black dark:text-white">
+                                      {shift.patient_name || "Resident"}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {shift.shift_date || "No date"}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 self-end md:self-auto">
+                                    <span className="text-sm font-medium text-sky-500">
+                                      {shift.status || "Active"}
+                                    </span>
+
+                                    <svg
+                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    </svg>
+                                  </div>
+                                </summary>
+
+                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                  <InfoCard
+                                    title="Resident"
+                                    value={shift.patient_name}
+                                  />
+                                  <InfoCard
+                                    title="Date"
+                                    value={shift.shift_date}
+                                  />
+                                  <InfoCard
+                                    title="Start"
+                                    value={shift.start_time}
+                                  />
+                                  <InfoCard
+                                    title="End"
+                                    value={shift.end_time}
+                                  />
+                                  <InfoCard
+                                    title="Status"
+                                    value={shift.status}
+                                  />
+                                </div>
+                              </details>
+                            ))}
+
+                          {staffShifts.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                              No shifts assigned to this staff member.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "checkins" && (
+                      <div className="space-y-5">
+                        <input
+                          type="text"
+                          value={searchCheckins}
+                          onChange={(e) => setSearchCheckins(e.target.value)}
+                          placeholder="Search check-ins..."
+                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+
+                        <div className="space-y-4">
+                          {staffCheckins
+                            .filter((checkin) => {
+                              const q = searchCheckins.toLowerCase();
+
+                              const searchable = [
+                                checkin.patient_name,
+                                checkin.status,
+                                checkin.mood,
+                                checkin.notes,
+                                checkin.observations,
+                                checkin.comments,
+                                checkin.submitted_at,
+                                formatUKTime(checkin.submitted_at),
+                              ]
+                                .map((value) => {
+                                  if (value == null) return "";
+                                  if (typeof value === "string")
+                                    return value.toLowerCase();
+                                  try {
+                                    return JSON.stringify(value).toLowerCase();
+                                  } catch {
+                                    return String(value).toLowerCase();
+                                  }
+                                })
+                                .join(" ");
+
+                              return searchable.includes(q);
+                            })
+                            .map((checkin) => (
+                              <details
+                                key={checkin.id}
+                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              >
+                                <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                  <div>
+                                    <p className="font-semibold text-black dark:text-white">
+                                      {checkin.patient_name || "Resident"}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {formatUKTime(checkin.submitted_at)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 self-end md:self-auto">
+                                    <span className="text-sm font-medium text-sky-500">
+                                      {checkin.status || "Completed"}
+                                    </span>
+
+                                    <svg
+                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    </svg>
+                                  </div>
+                                </summary>
+
+                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <InfoCard
+                                    title="Resident"
+                                    value={checkin.patient_name}
+                                  />
+                                  <InfoCard
+                                    title="Completed"
+                                    value={formatUKTime(checkin.submitted_at)}
+                                  />
+                                  <InfoCard
+                                    title="Status"
+                                    value={checkin.status}
+                                  />
+                                  <InfoCard title="Mood" value={checkin.mood} />
+                                  <InfoCard
+                                    title="Hydration"
+                                    value={checkin.hydration}
+                                  />
+                                  <InfoCard
+                                    title="Mobility"
+                                    value={checkin.mobility}
+                                  />
+                                  <InfoCard
+                                    title="Medication"
+                                    value={checkin.medication}
+                                  />
+                                  <InfoCard
+                                    title="Observations"
+                                    value={
+                                      typeof (
+                                        checkin.notes ??
+                                        checkin.observations ??
+                                        checkin.comments
+                                      ) === "object"
+                                        ? JSON.stringify(
+                                            checkin.notes ??
+                                              checkin.observations ??
+                                              checkin.comments,
+                                          )
+                                        : (checkin.notes ??
+                                          checkin.observations ??
+                                          checkin.comments)
+                                    }
+                                  />
+                                </div>
+                              </details>
+                            ))}
+
+                          {staffCheckins.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                              No check-ins completed by this staff member.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "handovers" && (
+                      <div className="space-y-5">
+                        <input
+                          type="text"
+                          value={searchHandovers}
+                          onChange={(e) => setSearchHandovers(e.target.value)}
+                          placeholder="Search handovers..."
+                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+
+                        <div className="space-y-4">
+                          {staffHandovers
+                            .filter((handover) => {
+                              const q = searchHandovers.toLowerCase();
+                              return (
+                                (handover.patient_name || "")
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                (handover.concerns_incidents || "")
+                                  .toLowerCase()
+                                  .includes(q) ||
+                                (handover.wellbeing_summary || "")
+                                  .toLowerCase()
+                                  .includes(q)
+                              );
+                            })
+                            .map((handover) => (
+                              <details
+                                key={handover.id}
+                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              >
+                                <summary className="cursor-pointer list-none px-5 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-sky-50 dark:hover:bg-sky-500/5 transition-colors">
+                                  <div>
+                                    <p className="font-semibold text-black dark:text-white">
+                                      {handover.patient_name || "Resident"}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {formatUKTime(handover.created_at)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 self-end md:self-auto">
+                                    <span className="text-sm font-medium text-emerald-500">
+                                      Submitted
+                                    </span>
+
+                                    <svg
+                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    </svg>
+                                  </div>
+                                </summary>
+
+                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <InfoCard
+                                    title="Resident"
+                                    value={handover.patient_name}
+                                  />
+                                  <InfoCard
+                                    title="Submitted"
+                                    value={formatUKTime(handover.created_at)}
+                                  />
+                                  <InfoCard
+                                    title="Wellbeing"
+                                    value={handover.wellbeing_summary}
+                                  />
+                                  <InfoCard
+                                    title="Care Summary"
+                                    value={handover.care_summary}
+                                  />
+                                  <InfoCard
+                                    title="Concerns / Incidents"
+                                    value={handover.concerns_incidents}
+                                  />
+                                  <InfoCard
+                                    title="Escalations"
+                                    value={handover.escalations}
+                                  />
+                                  <InfoCard
+                                    title="Family Communication"
+                                    value={handover.family_communication}
+                                  />
+                                  <InfoCard
+                                    title="Recommendations"
+                                    value={handover.recommendations}
+                                  />
+                                </div>
+                              </details>
+                            ))}
+
+                          {staffHandovers.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                              No handovers submitted by this staff member.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-gray-500">

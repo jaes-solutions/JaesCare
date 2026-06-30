@@ -742,8 +742,21 @@ export default function StaffDashboard() {
 
     if (!session?.user) return;
 
+    // Find the shift object using selectedShift.id
+    const shift = shifts.find((s) => s.id === selectedShift.id);
+
+    if (!shift) {
+      console.error("Shift not found");
+      return;
+    }
+
     const { error } = await supabase.from("handovers").insert({
       shift_id: selectedShift.id,
+      patient_id: shift.patient_id,
+      patient_name: shift.patient_name,
+      staff_id: session.user.id,
+      staff_name: staffName,
+      organization_id: shift.organization_id,
       wellbeing_summary: wellbeingSummary,
       care_summary: careSummary,
       concerns_incidents: concernsIncidents,
@@ -752,7 +765,6 @@ export default function StaffDashboard() {
       baseline_changes: baselineChanges,
       recommendations,
       detailed_notes: detailedNotes,
-      submitted_by: session.user.id,
     });
 
     if (error) {
@@ -1075,17 +1087,46 @@ export default function StaffDashboard() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      {shift.status === "done" && !shift.handover_completed && (
-                        <button
-                          onClick={() => {
-                            setSelectedShift(shift);
-                            setShowHandoverModal(true);
-                          }}
-                          className="h-[42px] px-4 rounded-[12px] bg-[#ffd15c] text-black font-medium"
-                        >
-                          Start Handover
-                        </button>
-                      )}
+                      {(() => {
+                        const ukNow = new Date(
+                          new Date().toLocaleString("en-US", {
+                            timeZone: "Europe/London",
+                          }),
+                        );
+
+                        const currentUkDate = new Intl.DateTimeFormat("en-CA", {
+                          timeZone: "Europe/London",
+                        }).format(new Date());
+
+                        const shiftEnd = ukToUTC(
+                          shift.shift_date,
+                          shift.end_time.slice(0, 5),
+                        );
+
+                        const handoverOpen = new Date(
+                          shiftEnd.getTime() - 30 * 60 * 1000,
+                        );
+
+                        const canStartHandover =
+                          !shift.handover_completed &&
+                          ((shift.shift_date === currentUkDate &&
+                            ukNow >= handoverOpen) ||
+                            shift.status === "done");
+
+                        return (
+                          canStartHandover && (
+                            <button
+                              onClick={() => {
+                                setSelectedShift(shift);
+                                setShowHandoverModal(true);
+                              }}
+                              className="h-[42px] px-4 rounded-[12px] bg-[#ffd15c] text-black font-medium"
+                            >
+                              Start Handover
+                            </button>
+                          )
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}

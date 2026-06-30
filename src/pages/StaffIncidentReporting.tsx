@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import AdminSidebar from "../components/AdminSidebar";
+import Sidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 import { supabase } from "../lib/supabase";
 
@@ -98,7 +99,7 @@ const outcomeList = [
   "Awaiting further review",
 ];
 
-const IncidentReporting: React.FC = () => {
+const StaffIncidentReporting: React.FC = () => {
   // State fields
   const [clientName, setClientName] = useState("");
   const [staffName, setStaffName] = useState("");
@@ -117,7 +118,8 @@ const IncidentReporting: React.FC = () => {
   const [outcome, setOutcome] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [organisationId, setOrganisationId] = useState<string | null>(null);
-  const [name, setName] = useState("Admin");
+  const [name, setName] = useState("Staff");
+  const [role, setRole] = useState("Staff");
   const [incidentDate, setIncidentDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -125,7 +127,7 @@ const IncidentReporting: React.FC = () => {
     new Date().toTimeString().slice(0, 5),
   );
   useEffect(() => {
-    const loadOrganisationId = async () => {
+    const loadOrganisationIdAndResident = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -134,7 +136,7 @@ const IncidentReporting: React.FC = () => {
 
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("full_name, organization_id")
+        .select("full_name, organization_id, role")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -146,6 +148,9 @@ const IncidentReporting: React.FC = () => {
       if (profile?.organization_id) {
         setOrganisationId(profile.organization_id);
       }
+      if (profile?.role) {
+        setRole(profile.role);
+      }
 
       const fullName = profile?.full_name?.trim();
 
@@ -153,13 +158,27 @@ const IncidentReporting: React.FC = () => {
         setName(fullName);
         setStaffName(fullName);
       } else {
-        setName(session.user.email ?? "Admin");
+        setName(session.user.email ?? "Staff");
+      }
+
+      // Load currently assigned resident from active shift
+      const { data: shift } = await supabase
+        .from("shifts")
+        .select("patient_name")
+        .eq("staff_id", session.user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (shift?.patient_name) {
+        setClientName(shift.patient_name);
       }
 
       console.log("Loaded profile:", profile);
     };
 
-    loadOrganisationId();
+    loadOrganisationIdAndResident();
   }, []);
 
   // Date and time
@@ -172,7 +191,11 @@ const IncidentReporting: React.FC = () => {
     setCategory(e.target.value);
     setSubcategory(""); // Reset subcategory
   };
-
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
   // This Handles actions checkbox
   const handleActionChange = (action: string) => {
     setActionsTaken((prev) =>
@@ -263,7 +286,7 @@ const IncidentReporting: React.FC = () => {
       alert("Incident submitted successfully.");
       setIncidentDate(new Date().toISOString().split("T")[0]);
       setIncidentTime(new Date().toTimeString().slice(0, 5));
-      setClientName("");
+      // Keep the assigned resident after submission
       setStaffName(name);
       setLocation("");
       setShiftType("");
@@ -291,9 +314,9 @@ const IncidentReporting: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-black/60">
-      <AdminSidebar onLogout={() => {}} />
+      <Sidebar onLogout={handleLogout} />
       <div className="lg:ml-[245px] min-h-screen">
-        <Navbar name={name} role="Admin" />
+        <Navbar name={name} role={role} />
         <form
           onSubmit={handleSubmit}
           className="px-4 sm:px-6 lg:px-8 pt-14 pb-6"
@@ -321,7 +344,7 @@ const IncidentReporting: React.FC = () => {
                     type="text"
                     className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#0b1018] text-gray-900 dark:text-white px-4 py-3"
                     value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
+                    readOnly
                     required
                   />
                 </div>
@@ -333,7 +356,7 @@ const IncidentReporting: React.FC = () => {
                     type="text"
                     className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#0b1018] text-gray-900 dark:text-white px-4 py-3"
                     value={staffName}
-                    onChange={(e) => setStaffName(e.target.value)}
+                    readOnly
                     required
                   />
                 </div>
@@ -376,6 +399,9 @@ const IncidentReporting: React.FC = () => {
                     value={incidentDate}
                     onChange={(e) => setIncidentDate(e.target.value)}
                     required
+                    onClick={(e) => {
+                      (e.currentTarget as HTMLInputElement).showPicker?.();
+                    }}
                   />
                 </div>
                 <div>
@@ -388,6 +414,10 @@ const IncidentReporting: React.FC = () => {
                     value={incidentTime}
                     onChange={(e) => setIncidentTime(e.target.value)}
                     required
+                    step={60}
+                    onClick={(e) => {
+                      (e.currentTarget as HTMLInputElement).showPicker?.();
+                    }}
                   />
                 </div>
                 <div>
@@ -634,4 +664,4 @@ const IncidentReporting: React.FC = () => {
   );
 };
 
-export default IncidentReporting;
+export default StaffIncidentReporting;

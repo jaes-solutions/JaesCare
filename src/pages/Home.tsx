@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useCanvasCursor from "../components/UseCanvasCursor";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,6 +124,7 @@ export default function Home() {
   const [counts, setCounts] = useState([0, 0, 0, 0]);
   const [sending, setSending] = useState(false);
   const navigate = useNavigate();
+  useCanvasCursor();
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -732,18 +734,14 @@ export default function Home() {
               </div>
             </section>
             {/* JAES Care Brand Statement */}
-            <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-[#030712] dark:via-[#050b16] dark:to-[#030712] py-32 transition-colors duration-300">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,50%),rgba(56,189,248,0.16),transparent_260px)] dark:bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,50%),rgba(56,189,248,0.22),transparent_240px)] transition-all duration-150 pointer-events-none" />
-
-              <div
-                className="relative z-10 max-w-7xl mx-auto px-6 text-center"
-                onMouseMove={(e) => {
-                  const target = e.currentTarget.parentElement as HTMLElement;
-                  const rect = target.getBoundingClientRect();
-                  target.style.setProperty("--x", `${e.clientX - rect.left}px`);
-                  target.style.setProperty("--y", `${e.clientY - rect.top}px`);
-                }}
-              >
+            <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-black dark:via-black dark:to-black min-h-screen flex items-center justify-center transition-colors duration-300">
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <canvas
+                  id="canvas"
+                  className="pointer-events-none absolute inset-0 w-full h-full"
+                />
+              </div>
+              <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
                 <p className="uppercase tracking-[0.4em] text-sky-600 dark:text-sky-400 font-semibold mb-6">
                   Built for Modern Care Providers
                 </p>

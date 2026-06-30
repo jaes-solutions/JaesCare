@@ -11,6 +11,7 @@ export default function HourlyCheck() {
   const [staffRole, setStaffRole] = useState("");
   const [, setCurrentShift] = useState<any | null>(null);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const historyData = Object.values(
     todayChecks.reduce((acc: any, check: any) => {
@@ -73,6 +74,7 @@ export default function HourlyCheck() {
 
   async function checkStaffAccess() {
     try {
+      setLoading(true);
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -257,6 +259,8 @@ export default function HourlyCheck() {
       }
     } catch (err) {
       console.error("HourlyCheck Error:", err);
+    } finally {
+      setLoading(false);
     }
   }
   function toggleValue(
@@ -341,6 +345,31 @@ export default function HourlyCheck() {
       console.error(err);
       alert("Failed to save check-in");
     }
+  }
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-white dark:bg-[#03060b] transition-colors">
+        <StaffSidebar onLogout={() => {}} />
+
+        <div className="flex-1 overflow-y-auto lg:ml-[245px] min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px]">
+          <Navbar name={staffName} role={staffRole} />
+
+          <main className="max-w-7xl mx-auto p-5 lg:p-7 flex-1 flex items-center justify-center min-h-[calc(100vh-78px)]">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
+                <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400">
+                Loading data, please wait...
+              </p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
   return (
     <div className="min-h-screen bg-white dark:bg-[#03060b] text-black dark:text-white flex overflow-hidden transition-colors duration-300">
