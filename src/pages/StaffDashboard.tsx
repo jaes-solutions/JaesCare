@@ -12,27 +12,98 @@ export default function StaffDashboard() {
   const [staffRole, setStaffRole] = useState("");
   const [shifts, setShifts] = useState<any[]>([]);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
-  const currentUkDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/London",
-  }).format(new Date());
 
-  const currentUkTime = new Date(
-    new Date().toLocaleString("en-US", {
+  const getUKParts = (date = new Date()) => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",
-    }),
-  )
-    .toTimeString()
-    .slice(0, 5);
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
 
-  const activeShiftPatient = shifts.find((shift) => {
-    const shiftStart = shift.start_time.slice(0, 5);
-    const shiftEnd = shift.end_time.slice(0, 5);
+    const value = (type: string) =>
+      Number(parts.find((part) => part.type === type)?.value || 0);
 
-    return (
-      shift.shift_date === currentUkDate &&
-      currentUkTime >= shiftStart &&
-      currentUkTime <= shiftEnd
+    return {
+      year: value("year"),
+      month: value("month"),
+      day: value("day"),
+      hour: value("hour"),
+      minute: value("minute"),
+      second: value("second"),
+    };
+  };
+
+  const getUKWallClockDate = (date = new Date()) => {
+    const parts = getUKParts(date);
+
+    return new Date(
+      Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour,
+        parts.minute,
+        parts.second,
+      ),
     );
+  };
+
+  const getUKDateString = (date = new Date()) => {
+    const parts = getUKParts(date);
+
+    return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(
+      parts.day,
+    ).padStart(2, "0")}`;
+  };
+
+  const getUKTimeString = (date = new Date()) => {
+    const parts = getUKParts(date);
+
+    return `${String(parts.hour).padStart(2, "0")}:${String(
+      parts.minute,
+    ).padStart(2, "0")}`;
+  };
+
+  const getShiftWallClockRange = (shift: any) => {
+    const [startHour, startMinute] = shift.start_time
+      .slice(0, 5)
+      .split(":")
+      .map(Number);
+    const [endHour, endMinute] = shift.end_time
+      .slice(0, 5)
+      .split(":")
+      .map(Number);
+    const [year, month, day] = shift.shift_date.split("-").map(Number);
+
+    const start = new Date(
+      Date.UTC(year, month - 1, day, startHour, startMinute),
+    );
+    const end = new Date(Date.UTC(year, month - 1, day, endHour, endMinute));
+
+    if (end <= start) {
+      end.setUTCDate(end.getUTCDate() + 1);
+    }
+
+    return { start, end };
+  };
+
+  const isShiftActiveAt = (shift: any, ukNow = getUKWallClockDate()) => {
+    const { start, end } = getShiftWallClockRange(shift);
+
+    return ukNow >= start && ukNow <= end;
+  };
+
+  const currentUkDate = getUKDateString();
+  const currentUkTime = getUKTimeString();
+
+  // Overnight-aware active shift detection
+  const activeShiftPatient = shifts.find((shift) => {
+    return isShiftActiveAt(shift);
   });
 
   const nextShiftPatient = shifts.find((shift) => {
@@ -108,16 +179,27 @@ export default function StaffDashboard() {
   const [recommendations, setRecommendations] = useState("");
   const [detailedNotes, setDetailedNotes] = useState("");
 
-  // UK/UTC helpers
-  const UK_OFFSET_HOURS = 1;
-
   const ukToUTC = (date: string, time: string) => {
     const [year, month, day] = date.split("-").map(Number);
     const [hour, minute] = time.split(":").map(Number);
+    const targetWallTime = Date.UTC(year, month - 1, day, hour, minute, 0);
+    let utcDate = new Date(targetWallTime);
 
-    return new Date(
-      Date.UTC(year, month - 1, day, hour - UK_OFFSET_HOURS, minute, 0),
-    );
+    for (let i = 0; i < 3; i += 1) {
+      const parts = getUKParts(utcDate);
+      const actualWallTime = Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour,
+        parts.minute,
+        parts.second,
+      );
+
+      utcDate = new Date(utcDate.getTime() + targetWallTime - actualWallTime);
+    }
+
+    return utcDate;
   };
 
   const utcToUKTime = (timestamp: string) => {
@@ -125,13 +207,11 @@ export default function StaffDashboard() {
       timestamp.endsWith("Z") ? timestamp : timestamp + "Z",
     );
 
-    return new Date(
-      utcDate.getTime() + UK_OFFSET_HOURS * 60 * 60 * 1000,
-    ).toLocaleTimeString("en-GB", {
+    return utcDate.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-      timeZone: "UTC",
+      timeZone: "Europe/London",
     });
   };
 
@@ -152,27 +232,10 @@ export default function StaffDashboard() {
       );
 
       if (!next) {
-        const ukNow = new Date(
-          new Date().toLocaleString("en-US", {
-            timeZone: "Europe/London",
-          }),
-        );
-
-        const currentUkDate = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Europe/London",
-        }).format(new Date());
-
-        const currentUkTime = ukNow.toTimeString().slice(0, 5);
+        const ukNow = getUKWallClockDate();
 
         const activeShift = shifts.find((shift) => {
-          const shiftStart = shift.start_time.slice(0, 5);
-          const shiftEnd = shift.end_time.slice(0, 5);
-
-          return (
-            shift.shift_date === currentUkDate &&
-            currentUkTime >= shiftStart &&
-            currentUkTime <= shiftEnd
-          );
+          return isShiftActiveAt(shift, ukNow);
         });
 
         if (activeShift) {
@@ -181,8 +244,10 @@ export default function StaffDashboard() {
             isHandover: true,
           });
 
+          const { end: activeShiftEnd } = getShiftWallClockRange(activeShift);
+          const activeShiftEndDate = activeShiftEnd.toISOString().slice(0, 10);
           const handoverTime = ukToUTC(
-            activeShift.shift_date,
+            activeShiftEndDate,
             activeShift.end_time.slice(0, 5),
           );
 
@@ -292,23 +357,12 @@ export default function StaffDashboard() {
         .order("shift_date", { ascending: true });
 
       if (shiftData) {
-        const ukNow = new Date(
-          new Date().toLocaleString("en-US", {
-            timeZone: "Europe/London",
-          }),
-        );
-
-        const currentDate = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Europe/London",
-        }).format(new Date());
-
-        const currentTime = ukNow.toTimeString().slice(0, 5);
+        const ukNow = getUKWallClockDate();
 
         for (const shift of shiftData) {
-          const shiftFinished =
-            shift.shift_date < currentDate ||
-            (shift.shift_date === currentDate &&
-              currentTime > shift.end_time.slice(0, 5));
+          const { end: shiftEnd } = getShiftWallClockRange(shift);
+
+          const shiftFinished = ukNow > shiftEnd;
 
           if (shiftFinished && shift.status !== "done") {
             await supabase
@@ -335,48 +389,57 @@ export default function StaffDashboard() {
       if (!shiftError && shiftData) {
         const now = new Date();
 
-        const currentDate = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Europe/London",
-        }).format(new Date());
+        const currentDate = getUKDateString();
 
-        const todayShifts = shiftData.filter(
-          (shift) => shift.shift_date === currentDate,
-        );
+        const currentUk = getUKWallClockDate();
+
+        const todayShifts = shiftData.filter((shift) => {
+          const isActive = isShiftActiveAt(shift, currentUk);
+          const isToday = shift.shift_date === currentDate;
+
+          return isActive || isToday;
+        });
+
+        todayShifts.sort((a, b) => {
+          const aDateTime = `${a.shift_date} ${a.start_time}`;
+          const bDateTime = `${b.shift_date} ${b.start_time}`;
+          return bDateTime.localeCompare(aDateTime);
+        });
+
+        const activeShift = todayShifts.find((shift) => {
+          return isShiftActiveAt(shift, currentUk);
+        });
+
+        const shiftsToGenerate = activeShift
+          ? [activeShift]
+          : todayShifts.slice(0, 1);
 
         let generatedChecks: any[] = [];
 
-        // Replace forEach with for-await-of to allow await inside loop
-        for (const shift of todayShifts) {
+        for (const shift of shiftsToGenerate) {
           const [startHour, startMinute] = shift.start_time
             .split(":")
             .map(Number);
-
           const [endHour, endMinute] = shift.end_time.split(":").map(Number);
 
+          const [year, month, day] = shift.shift_date.split("-").map(Number);
           let currentCheckTime = new Date(
-            Date.UTC(
-              Number(shift.shift_date.split("-")[0]),
-              Number(shift.shift_date.split("-")[1]) - 1,
-              Number(shift.shift_date.split("-")[2]),
-              startHour,
-              startMinute,
-            ),
+            Date.UTC(year, month - 1, day, startHour, startMinute),
           );
+          let shiftEndTime = new Date(
+            Date.UTC(year, month - 1, day, endHour, endMinute),
+          );
+          // Support overnight shifts: if end <= start, end is next day
+          if (shiftEndTime <= currentCheckTime) {
+            shiftEndTime.setUTCDate(shiftEndTime.getUTCDate() + 1);
+          }
 
-          const shiftEndTime = new Date(
-            Date.UTC(
-              Number(shift.shift_date.split("-")[0]),
-              Number(shift.shift_date.split("-")[1]) - 1,
-              Number(shift.shift_date.split("-")[2]),
-              endHour,
-              endMinute,
-            ),
-          );
+          let checkIndex = 0;
 
           while (currentCheckTime < shiftEndTime) {
+            const checkDate = currentCheckTime.toISOString().slice(0, 10);
             const formattedHour = currentCheckTime.toISOString().slice(11, 16);
-
-            const checkTime = ukToUTC(shift.shift_date, formattedHour);
+            const checkTime = ukToUTC(checkDate, formattedHour);
 
             let status = "Upcoming";
             let color = "blue";
@@ -519,16 +582,18 @@ export default function StaffDashboard() {
               submittedAt: existingCheck.data?.submitted_at || null,
               shiftId: shift.id,
               checkTime: formattedHour,
-              shiftDate: shift.shift_date,
-              isFourHourly:
-                generatedChecks.length > 0 &&
-                (generatedChecks.length + 1) % 4 === 0,
+              shiftDate: checkDate,
+              scheduledAt: checkTime.toISOString(),
+              isFourHourly: checkIndex > 0 && (checkIndex + 1) % 4 === 0,
             });
-            currentCheckTime.setHours(currentCheckTime.getHours() + 1);
+            checkIndex += 1;
+            currentCheckTime.setUTCHours(currentCheckTime.getUTCHours() + 1);
           }
         }
 
-        generatedChecks.sort((a, b) => a.time.localeCompare(b.time));
+        generatedChecks.sort((a, b) =>
+          a.scheduledAt.localeCompare(b.scheduledAt),
+        );
 
         setTodayChecks(generatedChecks);
       }
@@ -887,27 +952,9 @@ export default function StaffDashboard() {
 
                   <h2 className="text-black dark:text-white text-[24px] font-semibold mb-2">
                     {(() => {
-                      const ukNow = new Date(
-                        new Date().toLocaleString("en-US", {
-                          timeZone: "Europe/London",
-                        }),
-                      );
-
-                      const currentUkDate = new Intl.DateTimeFormat("en-CA", {
-                        timeZone: "Europe/London",
-                      }).format(new Date());
-
-                      const currentUkTime = ukNow.toTimeString().slice(0, 5);
-
+                      const ukNow = getUKWallClockDate();
                       const activeShift = shifts.find((shift) => {
-                        const shiftStart = shift.start_time.slice(0, 5);
-                        const shiftEnd = shift.end_time.slice(0, 5);
-
-                        return (
-                          shift.shift_date === currentUkDate &&
-                          currentUkTime >= shiftStart &&
-                          currentUkTime <= shiftEnd
-                        );
+                        return isShiftActiveAt(shift, ukNow);
                       });
 
                       return activeShift?.start_time || "No Active Shift";
@@ -916,27 +963,9 @@ export default function StaffDashboard() {
 
                   <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
                     {(() => {
-                      const ukNow = new Date(
-                        new Date().toLocaleString("en-US", {
-                          timeZone: "Europe/London",
-                        }),
-                      );
-
-                      const currentUkDate = new Intl.DateTimeFormat("en-CA", {
-                        timeZone: "Europe/London",
-                      }).format(new Date());
-
-                      const currentUkTime = ukNow.toTimeString().slice(0, 5);
-
+                      const ukNow = getUKWallClockDate();
                       const activeShift = shifts.find((shift) => {
-                        const shiftStart = shift.start_time.slice(0, 5);
-                        const shiftEnd = shift.end_time.slice(0, 5);
-
-                        return (
-                          shift.shift_date === currentUkDate &&
-                          currentUkTime >= shiftStart &&
-                          currentUkTime <= shiftEnd
-                        );
+                        return isShiftActiveAt(shift, ukNow);
                       });
 
                       return activeShift
@@ -1029,22 +1058,7 @@ export default function StaffDashboard() {
 
                         <h4 className="text-black dark:text-white text-[18px] font-semibold capitalize">
                           {(() => {
-                            const ukNow = new Date(
-                              new Date().toLocaleString("en-US", {
-                                timeZone: "Europe/London",
-                              }),
-                            );
-
-                            const currentUkDate = new Intl.DateTimeFormat(
-                              "en-CA",
-                              {
-                                timeZone: "Europe/London",
-                              },
-                            ).format(new Date());
-
-                            const currentUkTime = ukNow
-                              .toTimeString()
-                              .slice(0, 5);
+                            const ukNow = getUKWallClockDate();
 
                             if (
                               shift.status === "done" &&
@@ -1059,28 +1073,19 @@ export default function StaffDashboard() {
                             ) {
                               return "Completed";
                             }
-                            const shiftStart = shift.start_time.slice(0, 5);
-                            const shiftEnd = shift.end_time.slice(0, 5);
 
-                            if (currentUkDate < shift.shift_date) {
+                            const { start: shiftStart, end: shiftEnd } =
+                              getShiftWallClockRange(shift);
+
+                            if (ukNow < shiftStart) {
                               return "Upcoming";
                             }
-
-                            if (currentUkDate > shift.shift_date) {
+                            if (ukNow > shiftEnd) {
                               return "Done";
                             }
-
-                            if (currentUkTime < shiftStart) {
-                              return "Upcoming";
-                            }
-
-                            if (
-                              currentUkTime >= shiftStart &&
-                              currentUkTime <= shiftEnd
-                            ) {
+                            if (ukNow >= shiftStart && ukNow <= shiftEnd) {
                               return "Active";
                             }
-
                             return "Done";
                           })()}
                         </h4>
@@ -1088,30 +1093,15 @@ export default function StaffDashboard() {
                     </div>
                     <div className="flex gap-2">
                       {(() => {
-                        const ukNow = new Date(
-                          new Date().toLocaleString("en-US", {
-                            timeZone: "Europe/London",
-                          }),
-                        );
-
-                        const currentUkDate = new Intl.DateTimeFormat("en-CA", {
-                          timeZone: "Europe/London",
-                        }).format(new Date());
-
-                        const shiftEnd = ukToUTC(
-                          shift.shift_date,
-                          shift.end_time.slice(0, 5),
-                        );
-
+                        const ukNow = getUKWallClockDate();
+                        const { end: shiftEnd } = getShiftWallClockRange(shift);
                         const handoverOpen = new Date(
                           shiftEnd.getTime() - 30 * 60 * 1000,
                         );
 
                         const canStartHandover =
                           !shift.handover_completed &&
-                          ((shift.shift_date === currentUkDate &&
-                            ukNow >= handoverOpen) ||
-                            shift.status === "done");
+                          (ukNow >= handoverOpen || shift.status === "done");
 
                         return (
                           canStartHandover && (

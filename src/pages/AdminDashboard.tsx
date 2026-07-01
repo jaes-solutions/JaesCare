@@ -39,23 +39,117 @@ export default function AdminDashboard() {
   const [staffCount, setStaffCount] = useState(0);
   const [maxUsers, setMaxUsers] = useState(5);
 
-  const activeShifts = shiftList.filter((shift) => {
-    const now = new Date();
-    const start = new Date(`${shift.shift_date}T${shift.start_time}`);
-    // Overnight/end-date logic
-    const effectiveEndDate = new Date(
-      `${shift.end_date || shift.shift_date}T00:00:00`,
+  const getUKParts = (date = new Date()) => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
+
+    const value = (type: string) =>
+      Number(parts.find((part) => part.type === type)?.value || 0);
+
+    return {
+      year: value("year"),
+      month: value("month"),
+      day: value("day"),
+      hour: value("hour"),
+      minute: value("minute"),
+      second: value("second"),
+    };
+  };
+
+  const getUKWallClockDate = (date = new Date()) => {
+    const parts = getUKParts(date);
+
+    return new Date(
+      Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour,
+        parts.minute,
+        parts.second,
+      ),
     );
-    if (
-      (!shift.end_date || shift.end_date === shift.shift_date) &&
+  };
+
+  const getUKDateString = (date = new Date()) => {
+    const parts = getUKParts(date);
+
+    return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(
+      parts.day,
+    ).padStart(2, "0")}`;
+  };
+
+  const addDaysToDateString = (date: string, days: number) => {
+    const [year, month, day] = date.split("-").map(Number);
+    const nextDate = new Date(Date.UTC(year, month - 1, day + days));
+
+    return `${nextDate.getUTCFullYear()}-${String(
+      nextDate.getUTCMonth() + 1,
+    ).padStart(2, "0")}-${String(nextDate.getUTCDate()).padStart(2, "0")}`;
+  };
+
+  const getWallClockDateTime = (date: string, time: string) => {
+    const [year, month, day] = date.split("-").map(Number);
+    const [hour, minute] = time.slice(0, 5).split(":").map(Number);
+
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  };
+
+  const getShiftWallClockRange = (shift: any) => {
+    const start = getWallClockDateTime(shift.shift_date, shift.start_time);
+    const fallbackEndDate =
       shift.end_time <= shift.start_time
-    ) {
-      effectiveEndDate.setDate(effectiveEndDate.getDate() + 1);
+        ? addDaysToDateString(shift.shift_date, 1)
+        : shift.shift_date;
+    const end = getWallClockDateTime(
+      shift.end_date || fallbackEndDate,
+      shift.end_time,
+    );
+
+    if (end <= start) {
+      end.setUTCDate(end.getUTCDate() + 1);
     }
-    const end = new Date(effectiveEndDate);
-    const [endHour, endMinute] = shift.end_time.split(":").map(Number);
-    end.setHours(endHour, endMinute, 0, 0);
-    return now >= start && now < end;
+
+    return { start, end };
+  };
+
+  const getShiftStatus = (shift: any, now = getUKWallClockDate()) => {
+    const { start, end } = getShiftWallClockRange(shift);
+
+    if (now >= end) return "completed";
+    if (now >= start) return "active";
+    return "upcoming";
+  };
+
+  const formatDateRange = (startDate: string, endDate?: string | null) => {
+    const formatDate = (date: string, includeYear: boolean) => {
+      const [year, month, day] = date.split("-").map(Number);
+
+      return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "long",
+        ...(includeYear && { year: "numeric" }),
+        timeZone: "UTC",
+      }).format(new Date(Date.UTC(year, month - 1, day)));
+    };
+
+    if (endDate && endDate !== startDate) {
+      return `${formatDate(startDate, false)} - ${formatDate(endDate, true)}`;
+    }
+
+    return formatDate(startDate, true);
+  };
+
+  const activeShifts = shiftList.filter((shift) => {
+    return getShiftStatus(shift) === "active";
   });
 
   useEffect(() => {
@@ -155,35 +249,10 @@ export default function AdminDashboard() {
       if (shiftsError) {
         console.error(shiftsError);
       } else {
+        const ukNow = getUKWallClockDate();
         const updatedShifts = await Promise.all(
           (shifts || []).map(async (shift) => {
-            const now = new Date();
-            const shiftStartDateTime = new Date(
-              `${shift.shift_date}T${shift.start_time}`,
-            );
-            // Overnight/end-date logic
-            const effectiveEndDate = new Date(
-              `${shift.end_date || shift.shift_date}T00:00:00`,
-            );
-            if (
-              (!shift.end_date || shift.end_date === shift.shift_date) &&
-              shift.end_time <= shift.start_time
-            ) {
-              effectiveEndDate.setDate(effectiveEndDate.getDate() + 1);
-            }
-            const shiftEndDateTime = new Date(effectiveEndDate);
-            const [endHour, endMinute] = shift.end_time.split(":").map(Number);
-            shiftEndDateTime.setHours(endHour, endMinute, 0, 0);
-
-            let calculatedStatus = "upcoming";
-
-            if (now >= shiftEndDateTime) {
-              calculatedStatus = "completed";
-            } else if (now >= shiftStartDateTime) {
-              calculatedStatus = "active";
-            } else {
-              calculatedStatus = "upcoming";
-            }
+            const calculatedStatus = getShiftStatus(shift, ukNow);
 
             if (shift.status !== calculatedStatus) {
               await supabase
@@ -273,17 +342,17 @@ export default function AdminDashboard() {
 
       // Overnight shift support
       const isOvernight = shiftEnd <= shiftStart;
+      const formattedEndDate = isOvernight
+        ? addDaysToDateString(shiftDate, 1)
+        : shiftDate;
+      const newShiftRange = {
+        start: getWallClockDateTime(shiftDate, shiftStart),
+        end: getWallClockDateTime(formattedEndDate, shiftEnd),
+      };
 
-      const [year, month, day] = shiftDate.split("-").map(Number);
-      const endDate = new Date(year, month - 1, day);
-
-      if (isOvernight) {
-        endDate.setDate(endDate.getDate() + 1);
+      if (newShiftRange.end <= newShiftRange.start) {
+        newShiftRange.end.setUTCDate(newShiftRange.end.getUTCDate() + 1);
       }
-
-      const formattedEndDate = `${endDate.getFullYear()}-${String(
-        endDate.getMonth() + 1,
-      ).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
 
       // Overlap validation
       const { data: existingShifts, error: existingShiftsError } =
@@ -293,7 +362,7 @@ export default function AdminDashboard() {
             "id, staff_id, patient_id, shift_date, end_date, start_time, end_time",
           )
           .eq("organization_id", organizationId)
-          .eq("shift_date", shiftDate);
+          .in("staff_id", [staff.id]);
 
       if (existingShiftsError) {
         console.error(existingShiftsError);
@@ -301,18 +370,34 @@ export default function AdminDashboard() {
         return;
       }
 
-      const newStartDateTime = new Date(`${shiftDate}T${shiftStart}`);
-      const newEndDateTime = new Date(`${formattedEndDate}T${shiftEnd}`);
+      const { data: existingPatientShifts, error: existingPatientShiftsError } =
+        await supabase
+          .from("shifts")
+          .select(
+            "id, staff_id, patient_id, shift_date, end_date, start_time, end_time",
+          )
+          .eq("organization_id", organizationId)
+          .in("patient_id", [patient.id]);
 
-      const overlaps = (existingShifts || []).some((existing: any) => {
-        const existingEndDate = existing.end_date || existing.shift_date;
-        const existingStart = new Date(
-          `${existing.shift_date}T${existing.start_time}`,
-        );
-        const existingEnd = new Date(`${existingEndDate}T${existing.end_time}`);
+      if (existingPatientShiftsError) {
+        console.error(existingPatientShiftsError);
+        alert("Unable to validate resident schedule.");
+        return;
+      }
 
+      const relevantExistingShifts = [
+        ...(existingShifts || []),
+        ...(existingPatientShifts || []),
+      ].filter(
+        (existing, index, all) =>
+          all.findIndex((item) => item.id === existing.id) === index,
+      );
+
+      const overlaps = relevantExistingShifts.some((existing: any) => {
+        const existingRange = getShiftWallClockRange(existing);
         const timeOverlap =
-          newStartDateTime < existingEnd && newEndDateTime > existingStart;
+          newShiftRange.start < existingRange.end &&
+          newShiftRange.end > existingRange.start;
 
         return (
           timeOverlap &&
@@ -327,18 +412,23 @@ export default function AdminDashboard() {
         return;
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = getUKDateString();
+      const now = getUKWallClockDate();
 
-      const selectedDate = new Date(`${shiftDate}T00:00:00`);
-      selectedDate.setHours(0, 0, 0, 0);
-
-      if (selectedDate < today) {
+      if (shiftDate < today) {
         alert("You cannot create shifts for a past date.");
         return;
       }
 
-      let shiftStatus = selectedDate > today ? "upcoming" : "active";
+      if (newShiftRange.end <= now) {
+        alert("You cannot create a shift that has already ended.");
+        return;
+      }
+
+      const shiftStatus =
+        now >= newShiftRange.start && now < newShiftRange.end
+          ? "active"
+          : "upcoming";
 
       const { error } = await supabase.from("shifts").insert({
         patient_id: patient.id,
@@ -743,26 +833,10 @@ export default function AdminDashboard() {
                   )}
 
                   {shiftList.map((shift) => {
-                    const startDate = new Date(`${shift.shift_date}T00:00:00`);
-                    const endDate = new Date(
-                      `${shift.end_date || shift.shift_date}T00:00:00`,
+                    const formattedDate = formatDateRange(
+                      shift.shift_date,
+                      shift.end_date,
                     );
-
-                    const formattedDate =
-                      shift.end_date && shift.end_date !== shift.shift_date
-                        ? `${startDate.toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                          })} - ${endDate.toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })}`
-                        : startDate.toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          });
 
                     return (
                       <div
@@ -810,41 +884,7 @@ export default function AdminDashboard() {
                               </p>
                               <p className="text-black dark:text-white font-semibold capitalize">
                                 {(() => {
-                                  const now = new Date();
-                                  const shiftStartDateTime = new Date(
-                                    `${shift.shift_date}T${shift.start_time}`,
-                                  );
-                                  // Overnight/end-date logic
-                                  const effectiveEndDate = new Date(
-                                    `${shift.end_date || shift.shift_date}T00:00:00`,
-                                  );
-                                  if (
-                                    (!shift.end_date ||
-                                      shift.end_date === shift.shift_date) &&
-                                    shift.end_time <= shift.start_time
-                                  ) {
-                                    effectiveEndDate.setDate(
-                                      effectiveEndDate.getDate() + 1,
-                                    );
-                                  }
-                                  const shiftEndDateTime = new Date(
-                                    effectiveEndDate,
-                                  );
-                                  const [endHour, endMinute] = shift.end_time
-                                    .split(":")
-                                    .map(Number);
-                                  shiftEndDateTime.setHours(
-                                    endHour,
-                                    endMinute,
-                                    0,
-                                    0,
-                                  );
-
-                                  if (now >= shiftEndDateTime)
-                                    return "Completed";
-                                  if (now >= shiftStartDateTime)
-                                    return "Active";
-                                  return "Upcoming";
+                                  return getShiftStatus(shift);
                                 })()}
                               </p>
                             </div>
