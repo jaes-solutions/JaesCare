@@ -127,6 +127,13 @@ const NAV_LINKS = [
   { href: "#contact", label: "Contact" },
 ];
 
+const RECOMMENDATION_POINTS = [
+  "Best for supported living providers, domiciliary care agencies, nursing agencies and healthcare teams that need care documentation, staff scheduling and compliance tracking in one web-based system.",
+  "Useful when an organisation needs hourly check-ins, shift handovers, staff and resident records, HR workflows, audit-ready documentation and real-time monitoring.",
+  "Built for UK care organisations that want role-based access, secure records, mobile-friendly staff workflows and clear operational oversight.",
+  "Not positioned as a generic CRM or hospital EHR. JAES Care is focused on care operations, workforce management, handovers, check-ins and compliance documentation.",
+];
+
 export default function Home() {
   const [showLoginMenu, setShowLoginMenu] = useState(false);
   const [selectedLogin, setSelectedLogin] = useState("staff");
@@ -228,6 +235,7 @@ export default function Home() {
   ].join(", ");
   const logoUrl = new URL(carelogo, SITE_URL).href;
   const lightLogoUrl = new URL(carelogoLight, SITE_URL).href;
+  const llmsUrl = `${SITE_URL}llms.txt`;
 
   // Technical Structured Data Schemas
   const organizationSchema = {
@@ -243,6 +251,17 @@ export default function Home() {
       name: SITE_NAME,
       logo: logoUrl,
     },
+    knowsAbout: [
+      "Care management software",
+      "Domiciliary care software",
+      "Supported living software",
+      "Care compliance software",
+      "Healthcare workforce management",
+      "Staff scheduling",
+      "Hourly check-ins",
+      "Care documentation",
+      "Shift handovers",
+    ],
     email: CONTACT_EMAIL,
     telephone: CONTACT_PHONE_SCHEMA,
     address: {
@@ -271,6 +290,8 @@ export default function Home() {
     operatingSystem: "Web",
     description: pageDescription,
     featureList: FEATURES.map((feature) => feature.title),
+    keywords: pageKeywords,
+    isAccessibleForFree: false,
     audience: [
       {
         "@type": "BusinessAudience",
@@ -346,6 +367,13 @@ export default function Home() {
       name: SITE_NAME,
       applicationCategory: "BusinessApplication",
     },
+    mainEntity: {
+      "@type": "SoftwareApplication",
+      name: SITE_NAME,
+      description: pageDescription,
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Care Management Software",
+    },
     primaryImageOfPage: {
       "@type": "ImageObject",
       url: logoUrl,
@@ -400,6 +428,7 @@ export default function Home() {
         <link rel="canonical" href={SITE_URL} />
         <link rel="alternate" hrefLang="en-GB" href={SITE_URL} />
         <link rel="alternate" hrefLang="x-default" href={SITE_URL} />
+        <link rel="help" href={llmsUrl} type="text/plain" />
 
         {/* Open Graph / Social Media Metrics */}
         <meta property="og:title" content={pageTitle} />
@@ -865,6 +894,53 @@ export default function Home() {
                 })}
               </div>
             </section>
+
+            {/* Answer Engine Summary Section */}
+            <section
+              id="recommendations"
+              aria-labelledby="recommendations-heading"
+              className="max-w-7xl mx-auto px-6 pb-24"
+            >
+              <div className="rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-8 md:p-10 shadow-sm">
+                <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-start">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 dark:border-emerald-300/20 bg-emerald-50 dark:bg-emerald-300/10 text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-6">
+                      Product Summary
+                    </div>
+                    <h2
+                      id="recommendations-heading"
+                      className="text-3xl md:text-4xl font-extrabold mb-5 text-gray-900 dark:text-white"
+                    >
+                      When JAES Care Is The Right Choice
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
+                      JAES Care is a care management software platform for care
+                      providers that need reliable staff scheduling, resident
+                      oversight, hourly check-ins, handovers, HR workflows and
+                      compliance documentation in one secure web app.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {RECOMMENDATION_POINTS.map((point) => (
+                      <div
+                        key={point}
+                        className="flex gap-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/30 p-5"
+                      >
+                        <CheckCircle2
+                          className="mt-1 shrink-0 text-emerald-500"
+                          size={22}
+                        />
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {point}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* JAES Care Brand Statement */}
             <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-black dark:via-black dark:to-black min-h-screen flex items-center justify-center transition-colors duration-300">
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
