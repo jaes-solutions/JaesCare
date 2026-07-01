@@ -4,6 +4,12 @@ import { supabase } from "../lib/supabase";
 import Sidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
 
+const HANDOVER_OPEN_BEFORE_SHIFT_END_MS = 60 * 60 * 1000;
+
+const formatWallClockTime = (date: Date) => {
+  return date.toISOString().slice(11, 16);
+};
+
 export default function StaffDashboard() {
   const navigate = useNavigate();
 
@@ -239,16 +245,20 @@ export default function StaffDashboard() {
         });
 
         if (activeShift) {
+          const { end: handoverClose } = getShiftWallClockRange(activeShift);
+          const handoverOpen = new Date(
+            handoverClose.getTime() - HANDOVER_OPEN_BEFORE_SHIFT_END_MS,
+          );
+
           setNextCheckin({
-            time: activeShift.end_time.slice(0, 5),
+            time: formatWallClockTime(handoverOpen),
             isHandover: true,
           });
 
-          const { end: activeShiftEnd } = getShiftWallClockRange(activeShift);
-          const activeShiftEndDate = activeShiftEnd.toISOString().slice(0, 10);
+          const handoverOpenDate = handoverOpen.toISOString().slice(0, 10);
           const handoverTime = ukToUTC(
-            activeShiftEndDate,
-            activeShift.end_time.slice(0, 5),
+            handoverOpenDate,
+            formatWallClockTime(handoverOpen),
           );
 
           const diff = handoverTime.getTime() - new Date().getTime();
@@ -1094,14 +1104,17 @@ export default function StaffDashboard() {
                     <div className="flex gap-2">
                       {(() => {
                         const ukNow = getUKWallClockDate();
-                        const { end: shiftEnd } = getShiftWallClockRange(shift);
+                        const { end: handoverClose } =
+                          getShiftWallClockRange(shift);
                         const handoverOpen = new Date(
-                          shiftEnd.getTime() - 30 * 60 * 1000,
+                          handoverClose.getTime() -
+                            HANDOVER_OPEN_BEFORE_SHIFT_END_MS,
                         );
 
                         const canStartHandover =
                           !shift.handover_completed &&
-                          (ukNow >= handoverOpen || shift.status === "done");
+                          ukNow >= handoverOpen &&
+                          ukNow <= handoverClose;
 
                         return (
                           canStartHandover && (
