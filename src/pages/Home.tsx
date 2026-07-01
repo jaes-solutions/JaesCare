@@ -24,6 +24,18 @@ import carelogo from "../assets/carelogo.png";
 import carelogoLight from "../assets/carelogo-light.png";
 
 const SITE_URL = "https://care.jaessolutions.com/";
+const SITE_NAME = "JAES Care";
+const COMPANY_NAME = "JAES Solutions";
+const CONTACT_EMAIL = "care@jaessolutions.com";
+const CONTACT_PHONE = "+44 1279 217307";
+const CONTACT_PHONE_SCHEMA = "+44-1279-217307";
+const OFFICE_ADDRESS = {
+  streetAddress: "Devonshire House, 582 Honeypot Lane",
+  addressLocality: "Stanmore",
+  addressRegion: "England",
+  postalCode: "HA7 1JS",
+  addressCountry: "GB",
+};
 
 const FEATURES = [
   {
@@ -197,40 +209,86 @@ export default function Home() {
     };
   }, []);
 
-  const pageTitle =
-    "JAES Care | Care Management, Workforce Management & Compliance Platform";
+  const pageTitle = "JAES Care | Care Management Software for Care Providers";
   const pageDescription =
-    "JAES Care is a secure cloud-based platform for supported living, domiciliary care, and nursing agencies. Manage staff, shifts, HR, regulatory compliance, and real-time care monitoring.";
+    "JAES Care is secure care management software for supported living, domiciliary care and nursing agencies. Manage staff, shifts, HR, check-ins, handovers and compliance in one platform.";
+  const pageKeywords = [
+    "JAES Care",
+    "care management software",
+    "care management system",
+    "domiciliary care software",
+    "supported living software",
+    "healthcare workforce management software",
+    "care compliance software",
+    "care staff scheduling software",
+    "hourly care check-ins",
+    "care handover software",
+    "care documentation software",
+    "UK care software",
+  ].join(", ");
+  const logoUrl = new URL(carelogo, SITE_URL).href;
+  const lightLogoUrl = new URL(carelogoLight, SITE_URL).href;
 
   // Technical Structured Data Schemas
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "JAES Solutions",
+    name: COMPANY_NAME,
+    legalName: COMPANY_NAME,
     url: SITE_URL,
-    logo: `${SITE_URL}assets/carelogo.png`,
+    logo: logoUrl,
+    image: lightLogoUrl,
+    brand: {
+      "@type": "Brand",
+      name: SITE_NAME,
+      logo: logoUrl,
+    },
+    email: CONTACT_EMAIL,
+    telephone: CONTACT_PHONE_SCHEMA,
+    address: {
+      "@type": "PostalAddress",
+      ...OFFICE_ADDRESS,
+    },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+44-000-000-0000",
+      telephone: CONTACT_PHONE_SCHEMA,
       contactType: "customer service",
+      email: CONTACT_EMAIL,
+      areaServed: "GB",
+      availableLanguage: "en-GB",
     },
-    sameAs: [
-      "https://www.linkedin.com/company/jaes-solutions",
-      "https://twitter.com/jaessolutions",
-    ],
   };
 
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "JAES Care",
+    name: SITE_NAME,
+    alternateName: ["JAES Care Management Software", "JAES Care Platform"],
     url: SITE_URL,
+    image: logoUrl,
     applicationCategory: "BusinessApplication",
+    applicationSubCategory: "Care Management Software",
     operatingSystem: "Web",
     description: pageDescription,
+    featureList: FEATURES.map((feature) => feature.title),
+    audience: [
+      {
+        "@type": "BusinessAudience",
+        name: "Supported living providers",
+      },
+      {
+        "@type": "BusinessAudience",
+        name: "Domiciliary care providers",
+      },
+      {
+        "@type": "BusinessAudience",
+        name: "Nursing agencies",
+      },
+    ],
     provider: {
       "@type": "Organization",
-      name: "JAES Solutions",
+      name: COMPANY_NAME,
+      url: SITE_URL,
     },
     offers: [
       {
@@ -256,6 +314,58 @@ export default function Home() {
     ],
   };
 
+  const webSiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    publisher: {
+      "@type": "Organization",
+      name: COMPANY_NAME,
+      logo: {
+        "@type": "ImageObject",
+        url: logoUrl,
+      },
+    },
+    inLanguage: "en-GB",
+  };
+
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: pageTitle,
+    url: SITE_URL,
+    description: pageDescription,
+    isPartOf: {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    about: {
+      "@type": "SoftwareApplication",
+      name: SITE_NAME,
+      applicationCategory: "BusinessApplication",
+    },
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: logoUrl,
+    },
+    inLanguage: "en-GB",
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+    ],
+  };
+
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -275,44 +385,62 @@ export default function Home() {
         <html lang="en-GB" />
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        <meta
-          name="keywords"
-          content="JAES Care, care management software, workforce management, healthcare software, domiciliary care software, supported living software, HR management, staff scheduling, regulatory compliance, hourly check-ins"
-        />
-        <meta name="author" content="JAES Solutions" />
+        <meta name="keywords" content={pageKeywords} />
+        <meta name="author" content={COMPANY_NAME} />
+        <meta name="creator" content={COMPANY_NAME} />
+        <meta name="publisher" content={COMPANY_NAME} />
+        <meta name="application-name" content={SITE_NAME} />
+        <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
         <meta name="theme-color" content="#38bdf8" />
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+        />
+        <link rel="canonical" href={SITE_URL} />
+        <link rel="alternate" hrefLang="en-GB" href={SITE_URL} />
+        <link rel="alternate" hrefLang="x-default" href={SITE_URL} />
 
         {/* Open Graph / Social Media Metrics */}
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={SITE_URL} />
-        <meta property="og:site_name" content="JAES Care" />
+        <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:locale" content="en_GB" />
-        <meta property="og:image" content={carelogo} />
-        <meta property="og:image:alt" content="JAES Care Platform Dashboard" />
+        <meta property="og:image" content={logoUrl} />
+        <meta property="og:image:secure_url" content={logoUrl} />
+        <meta property="og:image:alt" content="JAES Care management software" />
 
         {/* Twitter Metrics */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={carelogo} />
+        <meta name="twitter:image" content={logoUrl} />
+        <meta
+          name="twitter:image:alt"
+          content="JAES Care management software"
+        />
         <meta
           name="google-site-verification"
           content="xTGHwdAevpdtxiM80cd725PooKY8UqqsG8akNbNyEIk"
         />
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
-        />
-        <link rel="canonical" href={SITE_URL} />
 
         {/* AI & Search Engine JSON-LD Injections */}
+        <script type="application/ld+json">
+          {JSON.stringify(webSiteSchema)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(webPageSchema)}
+        </script>
         <script type="application/ld+json">
           {JSON.stringify(organizationSchema)}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(softwareAppSchema)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
         </script>
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
@@ -506,16 +634,17 @@ export default function Home() {
                 </div>
 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] mb-6 tracking-tight">
-                  The Complete
+                  JAES Care
                   <span className="block mt-2 bg-gradient-to-r from-sky-500 to-emerald-400 bg-clip-text text-transparent">
-                    Care Platform
+                    Management Software
                   </span>
                 </h1>
 
                 <p className="text-gray-600 dark:text-gray-400 text-lg md:text-xl leading-relaxed max-w-xl mb-10">
-                  Secure cloud-based software helping healthcare providers
-                  manage staff, patients, shift scheduling, handovers, and
-                  regulatory compliance from one intelligent dashboard.
+                  Secure cloud-based care management software for supported
+                  living, domiciliary care and nursing agencies. Manage staff,
+                  residents, shift scheduling, hourly check-ins, handovers and
+                  compliance from one intelligent dashboard.
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -980,10 +1109,10 @@ export default function Home() {
                       software.
                     </p>
                     <a
-                      href="mailto:care@jaessolutions.com"
+                      href={`mailto:${CONTACT_EMAIL}`}
                       className="text-sky-500 font-semibold hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
                     >
-                      care@jaessolutions.com
+                      {CONTACT_EMAIL}
                     </a>
                   </div>
 
@@ -998,10 +1127,10 @@ export default function Home() {
                       Fast support for all inquiries.
                     </p>
                     <a
-                      href="tel:+44 1279 217307"
+                      href={`tel:${CONTACT_PHONE_SCHEMA}`}
                       className="text-emerald-600 dark:text-emerald-400 font-semibold hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                     >
-                      +44 1279 217307
+                      {CONTACT_PHONE}
                     </a>
                   </div>
 
