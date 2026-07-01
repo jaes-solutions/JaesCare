@@ -4,6 +4,12 @@ import { supabase } from "../lib/supabase";
 import StaffSidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
 import { User, FileText, Search, Plus } from "lucide-react";
+import {
+  formatUKCalendarDate,
+  formatUKDateTime,
+  formatUKTimeOnly,
+  getUKDateString,
+} from "../lib/time";
 
 interface Shift {
   id: string;
@@ -37,18 +43,10 @@ const CARD_TITLE_STYLE =
   "font-semibold text-base text-slate-900 dark:text-slate-100";
 
 const formatUKTime = (date?: string, timeOnly = false) => {
-  if (!date) return "-";
-
-  return new Date(date).toLocaleString("en-GB", {
-    timeZone: "Europe/London",
-    day: timeOnly ? undefined : "2-digit",
-    month: timeOnly ? undefined : "2-digit",
-    year: timeOnly ? undefined : "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return timeOnly ? formatUKTimeOnly(date) : formatUKDateTime(date);
 };
+
+const formatIncidentDate = (date?: string) => formatUKCalendarDate(date);
 
 const StaffIncident: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -81,7 +79,7 @@ const StaffIncident: React.FC = () => {
         setStaffRole(profile.role ?? "");
       }
       // Today's date (used by the shifts table)
-      const today = new Date().toISOString().split("T")[0];
+      const today = getUKDateString();
       // Query for active shift
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
@@ -278,7 +276,7 @@ const StaffIncident: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-xs text-slate-400 dark:text-slate-500">
-                          {formatUKTime(incident.incident_date)}
+                          {formatIncidentDate(incident.incident_date)}
                           {incident.incident_time
                             ? " · " + incident.incident_time.slice(0, 5)
                             : ""}

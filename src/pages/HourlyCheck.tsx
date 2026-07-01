@@ -4,6 +4,15 @@ import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import { Clock3, CheckCircle2, AlertTriangle, XCircle, X } from "lucide-react";
 import StaffSidebar from "../components/StaffSidebar";
+import {
+  formatUKLongDate,
+  formatUKShortDate,
+  formatUKTimeOnly,
+  formatWallClockTime,
+  getShiftWallClockRange,
+  parseUtcTimestamp,
+  ukToUTC,
+} from "../lib/time";
 
 export default function HourlyCheck() {
   const navigate = useNavigate();
@@ -15,14 +24,7 @@ export default function HourlyCheck() {
 
   const historyData = Object.values(
     todayChecks.reduce((acc: any, check: any) => {
-      const dateKey = new Date(check.scheduled_time).toLocaleDateString(
-        "en-GB",
-        {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        },
-      );
+      const dateKey = formatUKLongDate(check.scheduled_time);
 
       if (!acc[dateKey]) {
         acc[dateKey] = {
@@ -122,33 +124,26 @@ export default function HourlyCheck() {
           const generatedCheckins = [];
 
           for (const shiftData of shiftsData) {
-            const start = new Date(
-              `${shiftData.shift_date}T${shiftData.start_time}`,
-            );
-
-            const end = new Date(
-              `${shiftData.shift_date}T${shiftData.end_time}`,
-            );
+            const { start, end } = getShiftWallClockRange(shiftData);
 
             const current = new Date(start);
 
-            while (current <= end) {
+            while (current < end) {
+              const checkDate = current.toISOString().slice(0, 10);
+              const checkTime = formatWallClockTime(current);
+              const scheduledTime = ukToUTC(checkDate, checkTime);
+
               generatedCheckins.push({
                 shift_id: shiftData.id,
                 patient_id: shiftData.patient_id,
                 patient_name: shiftData.patient_name,
                 staff_id: shiftData.staff_id,
                 staff_name: shiftData.staff_name,
-                scheduled_time: `${shiftData.shift_date}T${String(
-                  current.getHours(),
-                ).padStart(2, "0")}:${String(current.getMinutes()).padStart(
-                  2,
-                  "0",
-                )}:00`,
+                scheduled_time: scheduledTime.toISOString(),
                 status: "upcoming",
               });
 
-              current.setHours(current.getHours() + 1);
+              current.setUTCHours(current.getUTCHours() + 1);
             }
           }
 
@@ -163,13 +158,8 @@ export default function HourlyCheck() {
         }
         if (checkinsData) {
           const formattedChecks = checkinsData.map((check) => {
-            const scheduled = new Date(check.scheduled_time);
-
-            const ukNow = new Date(
-              new Date().toLocaleString("en-US", {
-                timeZone: "Europe/London",
-              }),
-            );
+            const scheduled = parseUtcTimestamp(check.scheduled_time);
+            const now = new Date();
 
             let status = "Upcoming";
             let color = "blue";
@@ -177,19 +167,17 @@ export default function HourlyCheck() {
             let completedAt = "--:--";
 
             const currentDiffMinutes =
-              (ukNow.getTime() - scheduled.getTime()) / 60000;
+              scheduled ? (now.getTime() - scheduled.getTime()) / 60000 : 0;
 
             if (check.submitted_at) {
-              const submitted = new Date(check.submitted_at);
+              const submitted = parseUtcTimestamp(check.submitted_at);
 
               const submittedDiffMinutes =
-                (submitted.getTime() - scheduled.getTime()) / 60000;
+                submitted && scheduled
+                  ? (submitted.getTime() - scheduled.getTime()) / 60000
+                  : 0;
 
-              completedAt = submitted.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              });
+              completedAt = formatUKTimeOnly(check.submitted_at);
 
               if (submittedDiffMinutes <= 30) {
                 status = "Completed on time";
@@ -230,17 +218,8 @@ export default function HourlyCheck() {
               patient_name: check.patient_name,
               staff_name: check.staff_name,
               scheduled_time: check.scheduled_time,
-              date: scheduled.toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                timeZone: "Europe/London",
-              }),
-              time: scheduled.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              }),
+              date: formatUKShortDate(check.scheduled_time),
+              time: formatUKTimeOnly(check.scheduled_time),
               status,
               note,
               completedAt,
@@ -251,8 +230,8 @@ export default function HourlyCheck() {
           setTodayChecks(
             formattedChecks.sort(
               (a, b) =>
-                new Date(b.scheduled_time).getTime() -
-                new Date(a.scheduled_time).getTime(),
+                (parseUtcTimestamp(b.scheduled_time)?.getTime() || 0) -
+                (parseUtcTimestamp(a.scheduled_time)?.getTime() || 0),
             ),
           );
         }
@@ -282,16 +261,14 @@ export default function HourlyCheck() {
     }
 
     try {
-      const submittedAt = new Date(
-        new Date().toLocaleString("en-US", {
-          timeZone: "Europe/London",
-        }),
-      );
+      const submittedAt = new Date();
 
-      const scheduledTime = new Date(selectedCheckin.scheduled_time);
+      const scheduledTime = parseUtcTimestamp(selectedCheckin.scheduled_time);
 
       const submittedDiffMinutes =
-        (submittedAt.getTime() - scheduledTime.getTime()) / 60000;
+        scheduledTime
+          ? (submittedAt.getTime() - scheduledTime.getTime()) / 60000
+          : 0;
 
       let checkinStatus = "completed_on_time";
 

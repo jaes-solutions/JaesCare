@@ -12,6 +12,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Sidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
+import {
+  addDaysToDateString,
+  getShiftWallClockRange,
+  getUKDateString,
+  getUKWallClockDate,
+  getWallClockDateTime,
+} from "../lib/time";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -38,88 +45,6 @@ export default function AdminDashboard() {
   const [shiftEnd, setShiftEnd] = useState("");
   const [staffCount, setStaffCount] = useState(0);
   const [maxUsers, setMaxUsers] = useState(5);
-
-  const getUKParts = (date = new Date()) => {
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }).formatToParts(date);
-
-    const value = (type: string) =>
-      Number(parts.find((part) => part.type === type)?.value || 0);
-
-    return {
-      year: value("year"),
-      month: value("month"),
-      day: value("day"),
-      hour: value("hour"),
-      minute: value("minute"),
-      second: value("second"),
-    };
-  };
-
-  const getUKWallClockDate = (date = new Date()) => {
-    const parts = getUKParts(date);
-
-    return new Date(
-      Date.UTC(
-        parts.year,
-        parts.month - 1,
-        parts.day,
-        parts.hour,
-        parts.minute,
-        parts.second,
-      ),
-    );
-  };
-
-  const getUKDateString = (date = new Date()) => {
-    const parts = getUKParts(date);
-
-    return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(
-      parts.day,
-    ).padStart(2, "0")}`;
-  };
-
-  const addDaysToDateString = (date: string, days: number) => {
-    const [year, month, day] = date.split("-").map(Number);
-    const nextDate = new Date(Date.UTC(year, month - 1, day + days));
-
-    return `${nextDate.getUTCFullYear()}-${String(
-      nextDate.getUTCMonth() + 1,
-    ).padStart(2, "0")}-${String(nextDate.getUTCDate()).padStart(2, "0")}`;
-  };
-
-  const getWallClockDateTime = (date: string, time: string) => {
-    const [year, month, day] = date.split("-").map(Number);
-    const [hour, minute] = time.slice(0, 5).split(":").map(Number);
-
-    return new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
-  };
-
-  const getShiftWallClockRange = (shift: any) => {
-    const start = getWallClockDateTime(shift.shift_date, shift.start_time);
-    const fallbackEndDate =
-      shift.end_time <= shift.start_time
-        ? addDaysToDateString(shift.shift_date, 1)
-        : shift.shift_date;
-    const end = getWallClockDateTime(
-      shift.end_date || fallbackEndDate,
-      shift.end_time,
-    );
-
-    if (end <= start) {
-      end.setUTCDate(end.getUTCDate() + 1);
-    }
-
-    return { start, end };
-  };
 
   const getShiftStatus = (shift: any, now = getUKWallClockDate()) => {
     const { start, end } = getShiftWallClockRange(shift);

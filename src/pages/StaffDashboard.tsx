@@ -3,12 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Sidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
+import {
+  formatUKTimeOnly,
+  formatWallClockTime,
+  getShiftWallClockRange,
+  getUKDateString,
+  getUKTimeString,
+  getUKWallClockDate,
+  parseUtcTimestamp,
+  ukToUTC,
+} from "../lib/time";
 
 const HANDOVER_OPEN_BEFORE_SHIFT_END_MS = 60 * 60 * 1000;
-
-const formatWallClockTime = (date: Date) => {
-  return date.toISOString().slice(11, 16);
-};
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
@@ -18,85 +24,6 @@ export default function StaffDashboard() {
   const [staffRole, setStaffRole] = useState("");
   const [shifts, setShifts] = useState<any[]>([]);
   const [todayChecks, setTodayChecks] = useState<any[]>([]);
-
-  const getUKParts = (date = new Date()) => {
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }).formatToParts(date);
-
-    const value = (type: string) =>
-      Number(parts.find((part) => part.type === type)?.value || 0);
-
-    return {
-      year: value("year"),
-      month: value("month"),
-      day: value("day"),
-      hour: value("hour"),
-      minute: value("minute"),
-      second: value("second"),
-    };
-  };
-
-  const getUKWallClockDate = (date = new Date()) => {
-    const parts = getUKParts(date);
-
-    return new Date(
-      Date.UTC(
-        parts.year,
-        parts.month - 1,
-        parts.day,
-        parts.hour,
-        parts.minute,
-        parts.second,
-      ),
-    );
-  };
-
-  const getUKDateString = (date = new Date()) => {
-    const parts = getUKParts(date);
-
-    return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(
-      parts.day,
-    ).padStart(2, "0")}`;
-  };
-
-  const getUKTimeString = (date = new Date()) => {
-    const parts = getUKParts(date);
-
-    return `${String(parts.hour).padStart(2, "0")}:${String(
-      parts.minute,
-    ).padStart(2, "0")}`;
-  };
-
-  const getShiftWallClockRange = (shift: any) => {
-    const [startHour, startMinute] = shift.start_time
-      .slice(0, 5)
-      .split(":")
-      .map(Number);
-    const [endHour, endMinute] = shift.end_time
-      .slice(0, 5)
-      .split(":")
-      .map(Number);
-    const [year, month, day] = shift.shift_date.split("-").map(Number);
-
-    const start = new Date(
-      Date.UTC(year, month - 1, day, startHour, startMinute),
-    );
-    const end = new Date(Date.UTC(year, month - 1, day, endHour, endMinute));
-
-    if (end <= start) {
-      end.setUTCDate(end.getUTCDate() + 1);
-    }
-
-    return { start, end };
-  };
 
   const isShiftActiveAt = (shift: any, ukNow = getUKWallClockDate()) => {
     const { start, end } = getShiftWallClockRange(shift);
@@ -185,40 +112,8 @@ export default function StaffDashboard() {
   const [recommendations, setRecommendations] = useState("");
   const [detailedNotes, setDetailedNotes] = useState("");
 
-  const ukToUTC = (date: string, time: string) => {
-    const [year, month, day] = date.split("-").map(Number);
-    const [hour, minute] = time.split(":").map(Number);
-    const targetWallTime = Date.UTC(year, month - 1, day, hour, minute, 0);
-    let utcDate = new Date(targetWallTime);
-
-    for (let i = 0; i < 3; i += 1) {
-      const parts = getUKParts(utcDate);
-      const actualWallTime = Date.UTC(
-        parts.year,
-        parts.month - 1,
-        parts.day,
-        parts.hour,
-        parts.minute,
-        parts.second,
-      );
-
-      utcDate = new Date(utcDate.getTime() + targetWallTime - actualWallTime);
-    }
-
-    return utcDate;
-  };
-
   const utcToUKTime = (timestamp: string) => {
-    const utcDate = new Date(
-      timestamp.endsWith("Z") ? timestamp : timestamp + "Z",
-    );
-
-    return utcDate.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      timeZone: "Europe/London",
-    });
+    return formatUKTimeOnly(timestamp);
   };
 
   useEffect(() => {
@@ -470,11 +365,9 @@ export default function StaffDashboard() {
 
             // IF CHECKIN EXISTS → DATABASE BECOMES SOURCE OF TRUTH
             if (existingCheck.data) {
-              const submittedTime = new Date(
-                existingCheck.data.submitted_at.endsWith("Z")
-                  ? existingCheck.data.submitted_at
-                  : existingCheck.data.submitted_at + "Z",
-              );
+              const submittedTime =
+                parseUtcTimestamp(existingCheck.data.submitted_at) ||
+                new Date();
 
               const submittedDiffMinutes =
                 (submittedTime.getTime() - checkTime.getTime()) / 60000;

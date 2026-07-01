@@ -130,7 +130,11 @@ function App() {
           />
           <Route
             path="/staffIncidentReporting"
-            element={<StaffIncidentReporting />}
+            element={
+              <ProtectedRoute requiredRole="staff">
+                <StaffIncidentReporting />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </BrowserRouter>

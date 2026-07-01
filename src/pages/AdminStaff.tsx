@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AdminSidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
+import { formatUKDateTime } from "../lib/time";
 
 export default function AdminStaff() {
   const [staff, setStaff] = useState<any[]>([]);
@@ -162,20 +163,7 @@ export default function AdminStaff() {
     loadStaff();
   };
 
-  const formatUKTime = (date?: string) => {
-    if (!date) return "—";
-
-    return new Date(date).toLocaleString("en-GB", {
-      timeZone: "Europe/London",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  };
+  const formatUKTime = (date?: string) => formatUKDateTime(date);
 
   // Derived values for staff summary (Info tab)
   const completedShifts = staffShifts.filter(
@@ -185,10 +173,22 @@ export default function AdminStaff() {
   const totalHoursWorked = completedShifts.reduce((total, shift) => {
     if (!shift.start_time || !shift.end_time) return total;
 
-    const start = new Date(`1970-01-01T${shift.start_time}`);
-    const end = new Date(`1970-01-01T${shift.end_time}`);
+    const [startHour, startMinute] = shift.start_time
+      .slice(0, 5)
+      .split(":")
+      .map(Number);
+    const [endHour, endMinute] = shift.end_time
+      .slice(0, 5)
+      .split(":")
+      .map(Number);
+    const start = startHour * 60 + startMinute;
+    let end = endHour * 60 + endMinute;
 
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (end <= start) {
+      end += 24 * 60;
+    }
+
+    const hours = (end - start) / 60;
     return total + (hours > 0 ? hours : 0);
   }, 0);
 

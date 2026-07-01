@@ -3,6 +3,11 @@ import { supabase } from "../lib/supabase";
 import AdminSidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
+import {
+  formatUKCalendarDate,
+  formatUKDateTime,
+  getUKParts,
+} from "../lib/time";
 
 export default function AdminPatients() {
   const [patients, setPatients] = useState<any[]>([]);
@@ -189,36 +194,23 @@ export default function AdminPatients() {
   const calculateAge = (dob?: string) => {
     if (!dob) return null;
 
-    const birthDate = new Date(dob);
-    const today = new Date();
+    const [birthYear, birthMonth, birthDay] = dob
+      .slice(0, 10)
+      .split("-")
+      .map(Number);
+    const today = getUKParts();
 
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+    let age = today.year - birthYear;
+    const monthDiff = today.month - birthMonth;
 
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.day < birthDay)) {
       age--;
     }
 
     return age;
   };
 
-  const formatUKTime = (date?: string) => {
-    if (!date) return "-";
-
-    return new Date(date).toLocaleString("en-GB", {
-      timeZone: "Europe/London",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  };
+  const formatUKTime = (date?: string) => formatUKDateTime(date);
 
   const filteredCheckins = patientCheckins.filter((checkin) => {
     const q = checkinSearch.trim().toLowerCase();
@@ -476,7 +468,10 @@ export default function AdminPatients() {
                                       {field.key === "date_of_birth"
                                         ? selectedPatient.patient_details
                                             ?.date_of_birth
-                                          ? `${selectedPatient.patient_details.date_of_birth} (${calculateAge(selectedPatient.patient_details.date_of_birth)} years)`
+                                          ? `${formatUKCalendarDate(
+                                              selectedPatient.patient_details
+                                                .date_of_birth,
+                                            )} (${calculateAge(selectedPatient.patient_details.date_of_birth)} years)`
                                           : "-"
                                         : field.key === "email"
                                           ? selectedPatient.email ||

@@ -165,7 +165,13 @@ export default function Sidebar({ onLogout }: SidebarProps) {
               </span>
             </button>
 
-            <button className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300">
+            <button
+              onClick={() => {
+                navigate("/adminSettings");
+                setOpen(false);
+              }}
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
+            >
               <Settings
                 size={18}
                 strokeWidth={2}

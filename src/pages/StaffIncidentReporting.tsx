@@ -5,6 +5,12 @@ import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
 
 import { supabase } from "../lib/supabase";
+import {
+  formatUKDate,
+  formatUKTimeOnly,
+  getUKDateString,
+  getUKTimeString,
+} from "../lib/time";
 
 // Incident categories and subcategories
 const incidentCategories: { [key: string]: string[] } = {
@@ -120,12 +126,8 @@ const StaffIncidentReporting: React.FC = () => {
   const [organisationId, setOrganisationId] = useState<string | null>(null);
   const [name, setName] = useState("Staff");
   const [role, setRole] = useState("Staff");
-  const [incidentDate, setIncidentDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
-  const [incidentTime, setIncidentTime] = useState(
-    new Date().toTimeString().slice(0, 5),
-  );
+  const [incidentDate, setIncidentDate] = useState(getUKDateString());
+  const [incidentTime, setIncidentTime] = useState(getUKTimeString());
   useEffect(() => {
     const loadOrganisationIdAndResident = async () => {
       const {
@@ -183,8 +185,8 @@ const StaffIncidentReporting: React.FC = () => {
 
   // Date and time
   const now = new Date();
-  const dateString = now.toLocaleDateString();
-  const timeString = now.toLocaleTimeString();
+  const dateString = formatUKDate(now.toISOString());
+  const timeString = formatUKTimeOnly(now.toISOString());
 
   // Handle category change
   const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -284,8 +286,8 @@ const StaffIncidentReporting: React.FC = () => {
       setIsSubmitting(false);
     } else {
       alert("Incident submitted successfully.");
-      setIncidentDate(new Date().toISOString().split("T")[0]);
-      setIncidentTime(new Date().toTimeString().slice(0, 5));
+      setIncidentDate(getUKDateString());
+      setIncidentTime(getUKTimeString());
       // Keep the assigned resident after submission
       setStaffName(name);
       setLocation("");

@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import StaffSidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
+import {
+  formatUKCalendarDate,
+  formatUKDateTime,
+  getUKDateString,
+  getUKParts,
+} from "../lib/time";
 
 export default function StaffClient() {
   const [patient, setPatient] = useState<any>(null);
@@ -21,29 +27,23 @@ export default function StaffClient() {
   };
 
   const formatDate = (date?: string) => {
-    if (!date) return "-";
-
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return formatUKCalendarDate(date);
   };
 
   const calculateAge = (dob?: string) => {
     if (!dob) return "-";
 
-    const birthDate = new Date(dob);
-    const today = new Date();
+    const [birthYear, birthMonth, birthDay] = dob
+      .slice(0, 10)
+      .split("-")
+      .map(Number);
+    const today = getUKParts();
 
-    let age = today.getFullYear() - birthDate.getFullYear();
+    let age = today.year - birthYear;
 
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const monthDiff = today.month - birthMonth;
 
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.day < birthDay)) {
       age--;
     }
 
@@ -67,7 +67,7 @@ export default function StaffClient() {
       setStaffName(profile?.full_name || "Staff");
       setStaffRole(profile?.role || "staff");
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getUKDateString();
 
       const { data: shift, error: shiftError } = await supabase
         .from("shifts")
@@ -274,7 +274,7 @@ export default function StaffClient() {
                 <div className="space-y-4">
                   <Info
                     label="Completed"
-                    value={formatDate(latestHandover.created_at)}
+                    value={formatUKDateTime(latestHandover.created_at)}
                   />
 
                   <Info

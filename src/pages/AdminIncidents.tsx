@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import AdminSidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
+import { formatUKDate, formatUKDateTime } from "../lib/time";
 
 type IncidentRecord = {
   id: number;
@@ -158,7 +159,7 @@ const AdminIncidents: React.FC = () => {
         <div class="section"><span class="label">Category:</span> ${incident.category}</div>
         <div class="section"><span class="label">Subcategory:</span> ${incident.subcategory}</div>
         <div class="section"><span class="label">Outcome:</span> ${incident.outcome}</div>
-        <div class="section"><span class="label">Date:</span> ${new Date(incident.created_at).toLocaleString()}</div>
+        <div class="section"><span class="label">Date:</span> ${formatUKDateTime(incident.created_at)}</div>
         <div class="section desc"><span class="label">Incident Description:</span><br/>${incident.incident_description}</div>
       </body>
       </html>
@@ -325,7 +326,7 @@ const AdminIncidents: React.FC = () => {
                           {incident.outcome}
                         </td>
                         <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
-                          {new Date(incident.created_at).toLocaleDateString()}
+                          {formatUKDate(incident.created_at)}
                         </td>
                         <td className="py-3 px-2">
                           <button
@@ -411,7 +412,7 @@ const AdminIncidents: React.FC = () => {
                       Date:
                     </span>
                     <div className="text-slate-900 dark:text-white transition-colors">
-                      {new Date(selectedIncident.created_at).toLocaleString()}
+                      {formatUKDateTime(selectedIncident.created_at)}
                     </div>
                   </div>
                 </div>
