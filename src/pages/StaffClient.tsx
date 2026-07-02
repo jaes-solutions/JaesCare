@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import StaffSidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
-import {
-  formatUKCalendarDate,
-  formatUKDateTime,
-  getUKDateString,
-  getUKParts,
-} from "../lib/time";
+import { formatUKDateTime, getUKDateString } from "../lib/time";
 
 export default function StaffClient() {
   const [patient, setPatient] = useState<any>(null);
@@ -27,23 +22,29 @@ export default function StaffClient() {
   };
 
   const formatDate = (date?: string) => {
-    return formatUKCalendarDate(date);
+    if (!date) return "-";
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
   const calculateAge = (dob?: string) => {
     if (!dob) return "-";
 
-    const [birthYear, birthMonth, birthDay] = dob
-      .slice(0, 10)
-      .split("-")
-      .map(Number);
-    const today = getUKParts();
+    const birthDate = new Date(dob);
+    const today = new Date();
 
-    let age = today.year - birthYear;
+    let age = today.getFullYear() - birthDate.getFullYear();
 
-    const monthDiff = today.month - birthMonth;
+    const monthDiff = today.getMonth() - birthDate.getMonth();
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.day < birthDay)) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
 
@@ -129,13 +130,13 @@ export default function StaffClient() {
 
           <main className="flex-1 flex items-center justify-center px-4 md:px-8 lg:px-10 xl:px-12 pt-24 pb-8 max-w-7xl mx-auto w-full">
             <div className="flex flex-col items-center gap-6">
-              <div className="relative w-24 h-24">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                 <div className="absolute inset-0 rounded-full border-4 border-sky-200 dark:border-sky-900" />
                 <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-sky-400 border-r-emerald-300 animate-spin" />
                 <div className="absolute inset-3 rounded-full border-4 border-transparent border-b-sky-300 border-l-emerald-400 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base text-center px-4">
                 Loading data, please wait...
               </p>
             </div>
@@ -150,43 +151,47 @@ export default function StaffClient() {
 
       <StaffSidebar onLogout={handleLogout} />
 
-      <div className="pt-32 pl-[290px] pr-6 pb-6">
-        <div className="w-full space-y-6">
-          <div className="rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-8 shadow-2xl">
+      <div className="pt-20 sm:pt-24 lg:pt-32 px-4 sm:px-6 lg:pl-[290px] lg:pr-6 pb-6">
+        <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
+          <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-5 sm:p-6 lg:p-8 shadow-2xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <p className="text-sky-300 text-sm uppercase tracking-wider">
+                <p className="text-sky-300 text-xs sm:text-sm uppercase tracking-wider">
                   Resident
                 </p>
-                <h1 className="text-4xl font-bold mt-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mt-2 break-words">
                   {patient?.name || "No Resident Assigned"}
                 </h1>
               </div>
 
-              <div className="px-5 py-4 rounded-2xl bg-sky-500/10 border border-sky-500/20">
-                <p className="text-sky-300 text-sm">Assigned Resident</p>
-                <p className="font-semibold mt-1">
+              <div className="px-4 sm:px-5 py-3 sm:py-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 shrink-0">
+                <p className="text-sky-300 text-xs sm:text-sm">
+                  Assigned Resident
+                </p>
+                <p className="font-semibold mt-1 text-sm sm:text-base break-words">
                   {patient?.name || "No Resident Assigned"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-8 shadow-xl">
+          <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-5 sm:p-6 lg:p-8 shadow-xl">
             {!patientDetails ? (
-              <div className="text-center py-12">
-                <h2 className="text-2xl font-semibold mb-2">
+              <div className="text-center py-10 sm:py-12">
+                <h2 className="text-xl sm:text-2xl font-semibold mb-2">
                   No Resident Assigned
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                   You do not have a resident assigned for today's shift.
                 </p>
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-6">Resident Details</h2>
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  Resident Details
+                </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   <Info label="First Name" value={patientDetails?.first_name} />
 
                   <Info label="Last Name" value={patientDetails?.last_name} />
@@ -232,7 +237,7 @@ export default function StaffClient() {
                   />
                 </div>
 
-                <div className="mt-6 space-y-4">
+                <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                   <TextCard
                     title="Medical Conditions"
                     value={patientDetails?.medical_conditions}
@@ -263,24 +268,28 @@ export default function StaffClient() {
           </div>
 
           {patientDetails && (
-            <div className="rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-8 shadow-xl">
-              <h2 className="text-xl font-semibold mb-6">Latest Handover</h2>
+            <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-5 sm:p-6 lg:p-8 shadow-xl">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                Latest Handover
+              </h2>
 
               {!latestHandover ? (
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                   No previous handover available for this resident.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  <Info
-                    label="Completed"
-                    value={formatUKDateTime(latestHandover.created_at)}
-                  />
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <Info
+                      label="Completed"
+                      value={formatUKDateTime(latestHandover.created_at)}
+                    />
 
-                  <Info
-                    label="Completed By"
-                    value={latestHandover.staff_name}
-                  />
+                    <Info
+                      label="Completed By"
+                      value={latestHandover.staff_name}
+                    />
+                  </div>
 
                   <TextCard
                     title="Wellbeing Summary"
@@ -333,18 +342,20 @@ export default function StaffClient() {
 
 function Info({ label, value }: { label: string; value: any }) {
   return (
-    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-4">
+    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-3 sm:p-4">
       <p className="text-xs text-gray-600 dark:text-gray-400">{label}</p>
-      <p className="mt-1">{value || "-"}</p>
+      <p className="mt-1 text-sm sm:text-base break-words">{value || "-"}</p>
     </div>
   );
 }
 
 function TextCard({ title, value }: { title: string; value: any }) {
   return (
-    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-4">
-      <p className="text-sky-300 mb-2">{title}</p>
-      <p>{value || "-"}</p>
+    <div className="rounded-xl bg-gray-50 dark:bg-[#0b1018] border border-black/10 dark:border-white/10 p-3 sm:p-4">
+      <p className="text-sky-300 mb-2 text-sm sm:text-base">{title}</p>
+      <p className="text-sm sm:text-base whitespace-pre-wrap break-words">
+        {value || "-"}
+      </p>
     </div>
   );
 }
