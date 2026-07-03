@@ -2,7 +2,8 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import carelogo from "../assets/carelogo.png";
+import carelogoDark from "../assets/carelogo.png";
+import carelogoLight from "../assets/carelogo-light.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -119,11 +120,18 @@ export default function Login() {
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-300/10 blur-3xl rounded-full" />
 
         <div className="relative z-10 flex justify-center mb-4 sm:mb-6">
-          <img
-            src={carelogo}
-            alt="JAES Care Logo"
-            className="h-16 sm:h-20 w-auto object-contain"
-          />
+          <>
+            <img
+              src={carelogoLight}
+              alt="JAES Care Logo"
+              className="h-16 sm:h-20 w-auto object-contain block dark:hidden"
+            />
+            <img
+              src={carelogoDark}
+              alt="JAES Care Logo"
+              className="h-16 sm:h-20 w-auto object-contain hidden dark:block"
+            />
+          </>
         </div>
 
         <div className="relative z-10 text-center mb-7">
@@ -156,7 +164,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Password</label>
+            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+              Password
+            </label>
 
             <div className="relative">
               <input
@@ -205,7 +215,7 @@ export default function Login() {
           <div className="rounded-xl sm:rounded-2xl border border-black/10 dark:border-white/5 bg-gray-100 dark:bg-[#11161d]/70 p-3 sm:p-4 text-center backdrop-blur-xl">
             <p className="text-gray-600 dark:text-gray-500 text-xs leading-6">
               Need access? Contact your administrator to create your employee or
-              patient account.
+              resident account.
             </p>
           </div>
         </form>

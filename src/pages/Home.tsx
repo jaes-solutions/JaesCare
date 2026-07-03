@@ -25,7 +25,7 @@ import carelogoLight from "../assets/carelogo-light.png";
 
 const SITE_URL = "https://care.jaessolutions.com/";
 const SITE_NAME = "JAES Care";
-const COMPANY_NAME = "JAES Solutions";
+const COMPANY_NAME = "JAES Solutions Ltd.";
 const CONTACT_EMAIL = "care@jaessolutions.com";
 const CONTACT_PHONE = "+44 1279 217307";
 const CONTACT_PHONE_SCHEMA = "+44-1279-217307";
@@ -131,7 +131,7 @@ const RECOMMENDATION_POINTS = [
   "Best for supported living providers, domiciliary care agencies, nursing agencies and healthcare teams that need care documentation, staff scheduling and compliance tracking in one web-based system.",
   "Useful when an organisation needs hourly check-ins, shift handovers, staff and resident records, HR workflows, audit-ready documentation and real-time monitoring.",
   "Built for UK care organisations that want role-based access, secure records, mobile-friendly staff workflows and clear operational oversight.",
-  "Not positioned as a generic CRM or hospital EHR. JAES Care is focused on care operations, workforce management, handovers, check-ins and compliance documentation.",
+  "JAES Care is focused on care operations, workforce management, handovers, check-ins and compliance documentation.",
 ];
 
 export default function Home() {
@@ -425,6 +425,20 @@ export default function Home() {
           name="robots"
           content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
         />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="96x96"
+          href="/favicon-96x96.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
         <link rel="canonical" href={SITE_URL} />
         <link rel="alternate" hrefLang="en-GB" href={SITE_URL} />
         <link rel="alternate" hrefLang="x-default" href={SITE_URL} />
@@ -656,7 +670,13 @@ export default function Home() {
               id="home"
               className="relative z-0 max-w-7xl mx-auto px-6 pt-6 md:pt-24 pb-20 grid lg:grid-cols-2 gap-16 items-center"
             >
-              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <div
+                className="animate-in fade-in slide-in-from-bottom-8 duration-700"
+                data-aos="fade-right"
+                data-aos-duration="1000"
+                data-aos-delay="100"
+                data-aos-once="true"
+              >
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200 dark:border-sky-400/20 bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-300 text-sm font-semibold mb-6 shadow-sm">
                   <Activity size={16} className="animate-pulse" />
                   Care Management • Workforce • Compliance
@@ -704,7 +724,13 @@ export default function Home() {
               </div>
 
               {/* Graphical Performance Interface Card */}
-              <div className="relative animate-in fade-in zoom-in-95 duration-1000 delay-200">
+              <div
+                className="relative animate-in fade-in zoom-in-95 duration-1000 delay-200"
+                data-aos="fade-left"
+                data-aos-duration="1200"
+                data-aos-delay="250"
+                data-aos-once="true"
+              >
                 <div className="absolute -top-10 -right-10 w-64 h-64 bg-sky-400/30 blur-[80px] rounded-full pointer-events-none" />
                 <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-emerald-400/30 blur-[80px] rounded-full pointer-events-none" />
 
@@ -728,7 +754,13 @@ export default function Home() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-5 mb-8">
-                    <div className="rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 transition-colors hover:border-sky-200 dark:hover:border-sky-500/30">
+                    <div
+                      className="rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 transition-colors hover:border-sky-200 dark:hover:border-sky-500/30"
+                      data-aos="fade-up"
+                      data-aos-duration="1800"
+                      data-aos-delay="500"
+                      data-aos-once="true"
+                    >
                       <Clock3
                         className="text-sky-500 dark:text-sky-400 mb-3"
                         size={28}
@@ -741,7 +773,13 @@ export default function Home() {
                       </h4>
                     </div>
 
-                    <div className="rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500/30">
+                    <div
+                      className="rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500/30"
+                      data-aos="fade-up"
+                      data-aos-duration="1800"
+                      data-aos-delay="800"
+                      data-aos-once="true"
+                    >
                       <ShieldCheck
                         className="text-emerald-600 dark:text-emerald-300 mb-3"
                         size={28}
@@ -756,7 +794,13 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="group rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 flex items-center justify-between hover:bg-white dark:hover:bg-[#151b23] transition-all cursor-pointer shadow-sm hover:shadow-md">
+                    <div
+                      className="group rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 flex items-center justify-between hover:bg-white dark:hover:bg-[#151b23] transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      data-aos="fade-up"
+                      data-aos-duration="1800"
+                      data-aos-delay="1100"
+                      data-aos-once="true"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-400/10 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform">
                           <FileText size={22} />
@@ -775,7 +819,13 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="group rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 flex items-center justify-between hover:bg-white dark:hover:bg-[#151b23] transition-all cursor-pointer shadow-sm hover:shadow-md">
+                    <div
+                      className="group rounded-2xl bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-5 flex items-center justify-between hover:bg-white dark:hover:bg-[#151b23] transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      data-aos="fade-up"
+                      data-aos-duration="1800"
+                      data-aos-delay="1400"
+                      data-aos-once="true"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-300/10 flex items-center justify-center text-emerald-600 dark:text-emerald-300 group-hover:scale-110 transition-transform">
                           <Bell size={22} />
@@ -803,6 +853,9 @@ export default function Home() {
               ref={statsRef}
               aria-label="Platform statistics"
               className="max-w-7xl mx-auto px-6 pb-24"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <dl className="grid grid-cols-2 md:grid-cols-4 gap-6 rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-[#0d1117]/50 p-8 shadow-lg backdrop-blur-sm">
                 {STATS.map((stat, index) => {
@@ -839,6 +892,9 @@ export default function Home() {
             <section
               id="features"
               className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200 dark:border-sky-400/20 bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-300 text-sm font-semibold mb-6">
@@ -871,6 +927,10 @@ export default function Home() {
                           ? "hover:border-sky-300 dark:hover:border-sky-400/40 hover:shadow-sky-500/10"
                           : "hover:border-emerald-300 dark:hover:border-emerald-400/40 hover:shadow-emerald-500/10"
                       }`}
+                      data-aos="zoom-in-up"
+                      data-aos-duration="1400"
+                      data-aos-delay={120}
+                      data-aos-once="true"
                     >
                       <div
                         className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 group-hover:scale-110 ${
@@ -900,6 +960,9 @@ export default function Home() {
               id="recommendations"
               aria-labelledby="recommendations-heading"
               className="max-w-7xl mx-auto px-6 pb-24"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <div className="rounded-[2rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-8 md:p-10 shadow-sm">
                 <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-start">
@@ -942,7 +1005,12 @@ export default function Home() {
             </section>
 
             {/* JAES Care Brand Statement */}
-            <section className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-black dark:via-black dark:to-black min-h-screen flex items-center justify-center transition-colors duration-300">
+            <section
+              className="relative overflow-hidden border-t border-gray-200 dark:border-white/10 bg-gradient-to-b from-sky-50 via-white to-white dark:from-black dark:via-black dark:to-black min-h-screen flex items-center justify-center transition-colors duration-300"
+              data-aos="zoom-in"
+              data-aos-duration="2000"
+              data-aos-once="true"
+            >
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <canvas
                   id="canvas"
@@ -970,6 +1038,9 @@ export default function Home() {
             <section
               id="pricing"
               className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20 mt-10"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-200 dark:border-emerald-300/20 bg-emerald-50 dark:bg-emerald-300/10 text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-6">
@@ -991,7 +1062,13 @@ export default function Home() {
 
               <div className="grid lg:grid-cols-3 gap-8 items-center">
                 {/* Starter Tier */}
-                <div className="rounded-[2.5rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-10 relative overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group">
+                <div
+                  className="rounded-[2.5rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-10 relative overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group"
+                  data-aos="fade-right"
+                  data-aos-duration="1600"
+                  data-aos-delay="100"
+                  data-aos-once="true"
+                >
                   <div className="absolute top-0 right-0 w-40 h-40 bg-sky-400/10 blur-3xl rounded-full transition-transform group-hover:scale-150 duration-700" />
 
                   <h3 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
@@ -1029,7 +1106,11 @@ export default function Home() {
 
                   <button
                     type="button"
-                    onClick={() => navigate("/login")}
+                    onClick={() =>
+                      document
+                        .getElementById("contact")
+                        ?.scrollIntoView({ behavior: "smooth" })
+                    }
                     className="w-full py-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all duration-300 font-bold text-lg text-gray-900 dark:text-white"
                   >
                     Get Started
@@ -1037,7 +1118,13 @@ export default function Home() {
                 </div>
 
                 {/* Professional Tier (Highlighted) */}
-                <div className="rounded-[2.5rem] border-2 border-sky-400 dark:border-sky-400/50 bg-gradient-to-b from-sky-50 to-white dark:from-sky-900/20 dark:to-[#0d1117] p-10 relative overflow-hidden shadow-2xl shadow-sky-500/20 lg:scale-105 z-10 group">
+                <div
+                  className="rounded-[2.5rem] border-2 border-sky-400 dark:border-sky-400/50 bg-gradient-to-b from-sky-50 to-white dark:from-sky-900/20 dark:to-[#0d1117] p-10 relative overflow-hidden shadow-2xl shadow-sky-500/20 lg:scale-105 z-10 group"
+                  data-aos="fade-up"
+                  data-aos-duration="1700"
+                  data-aos-delay="250"
+                  data-aos-once="true"
+                >
                   <div className="absolute top-0 right-0 w-56 h-56 bg-sky-400/20 blur-[80px] rounded-full transition-transform group-hover:scale-125 duration-700" />
 
                   <div className="inline-flex px-4 py-1.5 rounded-full bg-sky-500 text-white dark:bg-sky-400/20 dark:text-sky-300 text-sm font-bold tracking-wide uppercase mb-6 shadow-sm">
@@ -1097,7 +1184,13 @@ export default function Home() {
                 </div>
 
                 {/* Enterprise Custom Solutions Tier */}
-                <div className="rounded-[2.5rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-10 relative overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group">
+                <div
+                  className="rounded-[2.5rem] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d1117] p-10 relative overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group"
+                  data-aos="fade-left"
+                  data-aos-duration="1600"
+                  data-aos-delay="400"
+                  data-aos-once="true"
+                >
                   <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/10 blur-3xl rounded-full transition-transform group-hover:scale-150 duration-700" />
 
                   <h3 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
@@ -1146,11 +1239,98 @@ export default function Home() {
                 </div>
               </div>
             </section>
+            {/* ICO Registration & Data Protection */}
+            <section
+              className="max-w-7xl mx-auto px-6 pb-24"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
+            >
+              <div className="rounded-[2.5rem] border border-sky-200 dark:border-sky-400/50 bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-[#000000] dark:via-[#000000] dark:to-[#000000] p-10 md:p-12 shadow-xl">
+                <div className="grid lg:grid-cols-[80px_1fr] gap-8 items-start">
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sky-500 to-emerald-400 flex items-center justify-center shadow-lg">
+                    <ShieldCheck className="text-white" size={40} />
+                  </div>
 
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 font-semibold text-sm mb-5">
+                      Information Governance
+                    </div>
+
+                    <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+                      ICO Registered & UK GDPR Compliant
+                    </h2>
+
+                    <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed max-w-4xl mb-8">
+                      JAES Care is committed to protecting sensitive patient,
+                      staff and organisational data. Our platform is built with
+                      security, privacy and compliance at its core, helping care
+                      providers meet UK data protection requirements while
+                      safeguarding confidential information.
+                    </p>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-5">
+                        <ShieldCheck className="text-sky-500 mb-3" size={26} />
+                        <h3 className="font-bold text-gray-900 dark:text-white">
+                          ICO Registered
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          Registered with the UK Information Commissioner's
+                          Office.
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-5">
+                        <ShieldCheck
+                          className="text-emerald-500 mb-3"
+                          size={26}
+                        />
+                        <h3 className="font-bold text-gray-900 dark:text-white">
+                          UK GDPR
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          Designed to support UK GDPR and the Data Protection
+                          Act 2018.
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-5">
+                        <ShieldCheck className="text-sky-500 mb-3" size={26} />
+                        <h3 className="font-bold text-gray-900 dark:text-white">
+                          Encrypted Data
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          Secure storage and encrypted transmission of sensitive
+                          records.
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-5">
+                        <ShieldCheck
+                          className="text-emerald-500 mb-3"
+                          size={26}
+                        />
+                        <h3 className="font-bold text-gray-900 dark:text-white">
+                          Role-Based Access
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          Only authorised users can access patient and staff
+                          information.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
             {/* Interactive Secure Contact Section Module */}
             <section
               id="contact"
               className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200 dark:border-sky-400/20 bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-300 text-sm font-semibold mb-6">
@@ -1335,6 +1515,9 @@ export default function Home() {
             <section
               id="faq"
               className="max-w-7xl mx-auto px-6 pb-24 scroll-mt-20"
+              data-aos="fade-up"
+              data-aos-duration="1600"
+              data-aos-once="true"
             >
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sky-200 dark:border-sky-400/20 bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-300 text-sm font-semibold mb-6">
