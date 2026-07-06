@@ -8,7 +8,7 @@ import {
   FileText,
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Sidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
@@ -22,6 +22,7 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [loading, setLoading] = useState(true);
   const [adminName, setAdminName] = useState("");
@@ -80,6 +81,27 @@ export default function AdminDashboard() {
   useEffect(() => {
     checkAdminAccess();
   }, []);
+  useEffect(() => {
+    if (!loading && location.hash === "#create-shift-section") {
+      requestAnimationFrame(() => {
+        const element = document.getElementById("create-shift-section");
+
+        if (!element) return;
+
+        const navbarOffset = 95; // adjust for the widthe of the navbar
+
+        const y =
+          element.getBoundingClientRect().top +
+          window.pageYOffset -
+          navbarOffset;
+
+        window.scrollTo({
+          top: y,
+          behavior: "smooth",
+        });
+      });
+    }
+  }, [loading, location]);
 
   const checkAdminAccess = async () => {
     try {

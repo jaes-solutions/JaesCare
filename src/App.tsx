@@ -17,6 +17,7 @@ import IncidentReporting from "./pages/IncidentReporting";
 import AdminIncidents from "./pages/AdminIncidents";
 import StaffIncident from "./pages/StaffIncident";
 import StaffIncidentReporting from "./pages/StaffIncidentReporting";
+import AdminShifts from "./pages/AdminShifts";
 function App() {
   const [darkMode, setDarkMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
@@ -146,6 +147,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="staff">
                 <StaffIncidentReporting />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/adminShifts"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminShifts />
               </ProtectedRoute>
             }
           />

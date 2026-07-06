@@ -8,6 +8,7 @@ import {
   X,
   AlertTriangle,
   ReceiptText,
+  CalendarDays,
 } from "lucide-react";
 
 import carelogo from "../assets/carelogo.png";
@@ -91,7 +92,23 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                 Dashboard
               </span>
             </button>
+            <button
+              onClick={() => {
+                navigate("/adminShifts");
+                setOpen(false);
+              }}
+              className="group w-full h-[50px] rounded-[15px] flex items-center gap-3 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] transition-all duration-300"
+            >
+              <CalendarDays
+                size={18}
+                strokeWidth={2}
+                className="text-gray-700 dark:text-[#c8d1dc]"
+              />
 
+              <span className="text-[14px] text-gray-900 dark:text-[#eef2f7]">
+                Shifts
+              </span>
+            </button>
             {/* ITEMS */}
             <button
               onClick={() => {

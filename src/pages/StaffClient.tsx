@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import StaffSidebar from "../components/StaffSidebar";
 import Navbar from "../components/Navbar";
@@ -11,7 +12,7 @@ export default function StaffClient() {
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState("");
   const [latestHandover, setLatestHandover] = useState<any>(null);
-
+  const [expandedHandover, setExpandedHandover] = useState<string | null>(null);
   useEffect(() => {
     loadPatient();
   }, []);
@@ -104,15 +105,14 @@ export default function StaffClient() {
 
       setPatientDetails(details);
 
-      const { data: handover } = await supabase
+      const { data: handovers } = await supabase
         .from("handovers")
         .select("*")
         .eq("patient_id", shift.patient_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("organization_id", shift.organization_id)
+        .order("created_at", { ascending: false });
 
-      setLatestHandover(handover);
+      setLatestHandover(handovers || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -270,66 +270,100 @@ export default function StaffClient() {
           {patientDetails && (
             <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#060b12]/95 border border-black/10 dark:border-white/10 p-5 sm:p-6 lg:p-8 shadow-xl">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                Latest Handover
+                Handovers
               </h2>
+              <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-400 mb-4">
+                Latest Handover
+              </h3>
 
-              {!latestHandover ? (
+              {!latestHandover || latestHandover.length === 0 ? (
                 <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-                  No previous handover available for this resident.
+                  No previous handovers available for this resident.
                 </p>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <Info
-                      label="Completed"
-                      value={formatUKDateTime(latestHandover.created_at)}
-                    />
+                <div className="space-y-6">
+                  {latestHandover.map((handover: any) => {
+                    const expanded = expandedHandover === handover.id;
 
-                    <Info
-                      label="Completed By"
-                      value={latestHandover.staff_name}
-                    />
-                  </div>
+                    return (
+                      <div
+                        key={handover.id}
+                        className="rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedHandover(expanded ? null : handover.id)
+                          }
+                          className="w-full flex items-center justify-between p-5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left flex-1">
+                            <Info
+                              label="Completed On"
+                              value={formatUKDateTime(handover.created_at)}
+                            />
 
-                  <TextCard
-                    title="Wellbeing Summary"
-                    value={latestHandover.wellbeing_summary}
-                  />
+                            <Info
+                              label="Completed By"
+                              value={handover.staff_name}
+                            />
+                          </div>
 
-                  <TextCard
-                    title="Care Summary"
-                    value={latestHandover.care_summary}
-                  />
+                          <div className="ml-4">
+                            {expanded ? (
+                              <ChevronUp size={22} />
+                            ) : (
+                              <ChevronDown size={22} />
+                            )}
+                          </div>
+                        </button>
 
-                  <TextCard
-                    title="Concerns / Incidents"
-                    value={latestHandover.concerns_incidents}
-                  />
+                        {expanded && (
+                          <div className="border-t border-black/10 dark:border-white/10 p-5 space-y-4">
+                            <TextCard
+                              title="Wellbeing Summary"
+                              value={handover.wellbeing_summary}
+                            />
 
-                  <TextCard
-                    title="Escalations"
-                    value={latestHandover.escalations}
-                  />
+                            <TextCard
+                              title="Care Summary"
+                              value={handover.care_summary}
+                            />
 
-                  <TextCard
-                    title="Family Communication"
-                    value={latestHandover.family_communication}
-                  />
+                            <TextCard
+                              title="Concerns / Incidents"
+                              value={handover.concerns_incidents}
+                            />
 
-                  <TextCard
-                    title="Baseline Changes"
-                    value={latestHandover.baseline_changes}
-                  />
+                            <TextCard
+                              title="Escalations"
+                              value={handover.escalations}
+                            />
 
-                  <TextCard
-                    title="Recommendations"
-                    value={latestHandover.recommendations}
-                  />
+                            <TextCard
+                              title="Family Communication"
+                              value={handover.family_communication}
+                            />
 
-                  <TextCard
-                    title="Detailed Notes"
-                    value={latestHandover.detailed_notes}
-                  />
+                            <TextCard
+                              title="Baseline Changes"
+                              value={handover.baseline_changes}
+                            />
+
+                            <TextCard
+                              title="Recommendations"
+                              value={handover.recommendations}
+                            />
+
+                            <TextCard
+                              title="Detailed Notes"
+                              value={handover.detailed_notes}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
