@@ -1,8 +1,216 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AdminSidebar from "../components/AdminSidebar";
 import Navbar from "../components/Navbar";
 import { formatUKDateTime } from "../lib/time";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// ---------------------------------------------------------------------------
+// Date filtering helpers
+// ---------------------------------------------------------------------------
+
+type DateFilter = "all" | "week" | "month" | "year" | "custom";
+
+const DATE_FILTER_LABEL: Record<DateFilter, string> = {
+  all: "All Time",
+  week: "This Week",
+  month: "This Month",
+  year: "This Year",
+  custom: "Custom Range",
+};
+
+function matchesDateFilter(
+  dateStr: string | undefined | null,
+  filter: DateFilter,
+  from?: string,
+  to?: string,
+): boolean {
+  if (!dateStr) return filter === "all";
+
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return false;
+
+  if (filter === "custom") {
+    if (from) {
+      const start = new Date(from);
+      start.setHours(0, 0, 0, 0);
+      if (date < start) return false;
+    }
+
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      if (date > end) return false;
+    }
+
+    return true;
+  }
+
+  if (filter === "all") return true;
+
+  const now = new Date();
+
+  if (filter === "year") {
+    return date.getFullYear() === now.getFullYear();
+  }
+
+  if (filter === "month") {
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    );
+  }
+
+  const startOfWeek = new Date(now);
+  const day = startOfWeek.getDay();
+  const diffToMonday = (day === 0 ? -6 : 1) - day;
+  startOfWeek.setDate(startOfWeek.getDate() + diffToMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+  return date >= startOfWeek && date < endOfWeek;
+}
+function DateFilterSelect({
+  value,
+  onChange,
+}: {
+  value: DateFilter;
+  onChange: (value: DateFilter) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as DateFilter)}
+      className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+    >
+      <option value="all">All Time</option>
+      <option value="week">This Week</option>
+      <option value="month">This Month</option>
+      <option value="year">This Year</option>
+      <option value="custom">Custom Range</option>
+    </select>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PDF export helpers
+// ---------------------------------------------------------------------------
+
+function downloadListPdf(
+  title: string,
+  subtitle: string,
+  columns: string[],
+  rows: (string | number)[][],
+  filename: string,
+) {
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(title, 14, 16);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(subtitle, 14, 23);
+
+  autoTable(doc, {
+    startY: 29,
+    head: [columns],
+    body:
+      rows.length > 0
+        ? rows
+        : [["No records found", ...columns.slice(1).map(() => "")]],
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [14, 165, 233] },
+  });
+
+  doc.save(filename);
+}
+
+function downloadRecordPdf(
+  title: string,
+  fields: { label: string; value: any }[],
+  filename: string,
+) {
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(title, 14, 16);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated: ${formatUKDateTime(new Date().toISOString())}`, 14, 23);
+
+  autoTable(doc, {
+    startY: 29,
+    head: [["Field", "Value"]],
+    body: fields.map((f) => [
+      f.label,
+      f.value === null || f.value === undefined || f.value === ""
+        ? "—"
+        : typeof f.value === "object"
+          ? JSON.stringify(f.value)
+          : String(f.value),
+    ]),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [14, 165, 233] },
+  });
+
+  doc.save(filename);
+}
+
+function slugify(value: string) {
+  return (value || "record")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+// Small reusable "Download PDF" button
+function DownloadPdfButton({
+  onClick,
+  label = "Download PDF",
+  small = false,
+}: {
+  onClick: () => void;
+  label?: string;
+  small?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onClick();
+      }}
+      className={`inline-flex items-center gap-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition text-sky-600 dark:text-sky-300 font-medium ${
+        small ? "px-3 py-1.5 text-xs" : "px-4 py-3 text-sm whitespace-nowrap"
+      }`}
+    >
+      <svg
+        className={small ? "w-3.5 h-3.5" : "w-4 h-4"}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"
+        />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export default function AdminStaff() {
   const [staff, setStaff] = useState<any[]>([]);
@@ -11,7 +219,7 @@ export default function AdminStaff() {
   const [loading, setLoading] = useState(true);
   const [adminName, setAdminName] = useState("Admin");
   const [activeTab, setActiveTab] = useState<
-    "info" | "shifts" | "checkins" | "handovers"
+    "info" | "shifts" | "checkins" | "handovers" | "documents" | "training"
   >("info");
 
   const [organizationId, setOrganizationId] = useState("");
@@ -22,6 +230,23 @@ export default function AdminStaff() {
   const [searchCheckins, setSearchCheckins] = useState("");
   const [searchHandovers, setSearchHandovers] = useState("");
 
+  // Date filters, independent per tab
+  const [filterShifts, setFilterShifts] = useState<DateFilter>("all");
+  const [filterCheckins, setFilterCheckins] = useState<DateFilter>("all");
+  const [filterHandovers, setFilterHandovers] = useState<DateFilter>("all");
+  const [shiftFrom, setShiftFrom] = useState("");
+  const [shiftTo, setShiftTo] = useState("");
+
+  const [checkinFrom, setCheckinFrom] = useState("");
+  const [checkinTo, setCheckinTo] = useState("");
+
+  const [handoverFrom, setHandoverFrom] = useState("");
+  const [handoverTo, setHandoverTo] = useState("");
+
+  // Explicit search triggers for custom date filters
+  const [shiftSearchTick, setShiftSearchTick] = useState(0);
+  const [checkinSearchTick, setCheckinSearchTick] = useState(0);
+  const [handoverSearchTick, setHandoverSearchTick] = useState(0);
   useEffect(() => {
     loadStaff();
   }, []);
@@ -165,13 +390,9 @@ export default function AdminStaff() {
 
   const formatUKTime = (date?: string) => formatUKDateTime(date);
 
-  // Derived values for staff summary (Info tab)
-  const completedShifts = staffShifts.filter(
-    (shift) => shift.status?.toLowerCase() === "completed",
-  );
-
-  const totalHoursWorked = completedShifts.reduce((total, shift) => {
-    if (!shift.start_time || !shift.end_time) return total;
+  // Helper used for both the "hours worked" summary calc and filtering
+  const shiftHours = (shift: any) => {
+    if (!shift.start_time || !shift.end_time) return 0;
 
     const [startHour, startMinute] = shift.start_time
       .slice(0, 5)
@@ -189,8 +410,301 @@ export default function AdminStaff() {
     }
 
     const hours = (end - start) / 60;
-    return total + (hours > 0 ? hours : 0);
-  }, 0);
+    return hours > 0 ? hours : 0;
+  };
+
+  // Derived values for staff summary (Info tab) — unfiltered, all-time
+  const completedShifts = staffShifts.filter(
+    (shift) => shift.status?.toLowerCase() === "completed",
+  );
+
+  const totalHoursWorked = completedShifts.reduce(
+    (total, shift) => total + shiftHours(shift),
+    0,
+  );
+
+  // -------------------------------------------------------------------------
+  // Filtered lists (search + date filter combined), memoized per tab
+  // -------------------------------------------------------------------------
+
+  const filteredShifts = useMemo(() => {
+    const q = searchShifts.toLowerCase();
+    return staffShifts.filter((shift) => {
+      const matchesSearch =
+        (shift.patient_name || "").toLowerCase().includes(q) ||
+        (shift.shift_date || "").toLowerCase().includes(q) ||
+        (shift.status || "").toLowerCase().includes(q);
+
+      const matchesDate = matchesDateFilter(
+        shift.shift_date || shift.created_at,
+        filterShifts,
+        shiftFrom,
+        shiftTo,
+      );
+
+      return matchesSearch && matchesDate;
+    });
+  }, [
+    staffShifts,
+    searchShifts,
+    filterShifts,
+    shiftFrom,
+    shiftTo,
+    shiftSearchTick,
+  ]);
+
+  const filteredCompletedShifts = useMemo(
+    () =>
+      filteredShifts.filter(
+        (shift) => shift.status?.toLowerCase() === "completed",
+      ),
+    [filteredShifts],
+  );
+
+  const filteredTotalHoursWorked = useMemo(
+    () =>
+      filteredCompletedShifts.reduce(
+        (total, shift) => total + shiftHours(shift),
+        0,
+      ),
+    [filteredCompletedShifts],
+  );
+
+  const filteredCheckins = useMemo(() => {
+    const q = searchCheckins.toLowerCase();
+    return staffCheckins.filter((checkin) => {
+      const searchable = [
+        checkin.patient_name,
+        checkin.status,
+        checkin.mood,
+        checkin.notes,
+        checkin.observations,
+        checkin.comments,
+        checkin.submitted_at,
+        formatUKTime(checkin.submitted_at),
+      ]
+        .map((value) => {
+          if (value == null) return "";
+          if (typeof value === "string") return value.toLowerCase();
+          try {
+            return JSON.stringify(value).toLowerCase();
+          } catch {
+            return String(value).toLowerCase();
+          }
+        })
+        .join(" ");
+
+      const matchesSearch = searchable.includes(q);
+      const matchesDate = matchesDateFilter(
+        checkin.submitted_at,
+        filterCheckins,
+        checkinFrom,
+        checkinTo,
+      );
+
+      return matchesSearch && matchesDate;
+    });
+  }, [
+    staffCheckins,
+    searchCheckins,
+    filterCheckins,
+    checkinFrom,
+    checkinTo,
+    checkinSearchTick,
+  ]);
+
+  const filteredHandovers = useMemo(() => {
+    const q = searchHandovers.toLowerCase();
+    return staffHandovers.filter((handover) => {
+      const matchesSearch =
+        (handover.patient_name || "").toLowerCase().includes(q) ||
+        (handover.concerns_incidents || "").toLowerCase().includes(q) ||
+        (handover.wellbeing_summary || "").toLowerCase().includes(q);
+
+      const matchesDate = matchesDateFilter(
+        handover.created_at,
+        filterHandovers,
+        handoverFrom,
+        handoverTo,
+      );
+
+      return matchesSearch && matchesDate;
+    });
+  }, [
+    staffHandovers,
+    searchHandovers,
+    filterHandovers,
+    handoverFrom,
+    handoverTo,
+    handoverSearchTick,
+  ]);
+
+  // -------------------------------------------------------------------------
+  // PDF export actions
+  // -------------------------------------------------------------------------
+
+  const exportShiftsPdf = () => {
+    const name = selectedStaff?.full_name || "Staff";
+    downloadListPdf(
+      `Shifts — ${name}`,
+      `${DATE_FILTER_LABEL[filterShifts]} · ${filteredShifts.length} shift(s) · ${filteredTotalHoursWorked.toFixed(1)} hrs worked (completed)`,
+      ["Resident", "Date", "Start", "End", "Status"],
+      filteredShifts.map((s) => [
+        s.patient_name || "—",
+        s.shift_date || "—",
+        s.start_time || "—",
+        s.end_time || "—",
+        s.status || "—",
+      ]),
+      `shifts-${slugify(name)}-${filterShifts}.pdf`,
+    );
+  };
+
+  const exportShiftPdf = (shift: any) => {
+    const name = selectedStaff?.full_name || "Staff";
+    downloadRecordPdf(
+      `Shift — ${shift.patient_name || "Resident"}`,
+      [
+        { label: "Staff", value: name },
+        { label: "Resident", value: shift.patient_name },
+        { label: "Date", value: shift.shift_date },
+        { label: "Start", value: shift.start_time },
+        { label: "End", value: shift.end_time },
+        { label: "Status", value: shift.status },
+      ],
+      `shift-${slugify(shift.patient_name || "resident")}-${shift.shift_date || shift.id}.pdf`,
+    );
+  };
+
+  const formatValue = (value: any) => {
+    if (value == null || value === "") return "—";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
+  };
+
+  const exportCheckinsPdf = () => {
+    const name = selectedStaff?.full_name || "Staff";
+
+    downloadListPdf(
+      `Check-ins — ${name}`,
+      `${DATE_FILTER_LABEL[filterCheckins]} · ${filteredCheckins.length} check-in(s)`,
+      [
+        "Resident",
+        "Submitted",
+        "Status",
+        "Wellbeing",
+        "Mood",
+        "Hydration",
+        "Safety",
+        "Engagement",
+        "Mobility",
+        "Medication",
+        "Privacy",
+        "Support",
+        "Safeguarding",
+      ],
+      filteredCheckins.map((c) => [
+        c.patient_name || "—",
+        formatUKTime(c.submitted_at),
+        c.status || "—",
+        formatValue(c.wellbeing),
+        formatValue(c.mood),
+        formatValue(c.hydration),
+        formatValue(c.safety),
+        formatValue(c.engagement),
+        formatValue(c.mobility),
+        formatValue(c.medication),
+        formatValue(c.privacy),
+        formatValue(c.support),
+        formatValue(c.safeguarding),
+      ]),
+      `checkins-${slugify(name)}-${filterCheckins}.pdf`,
+    );
+  };
+
+  const exportCheckinPdf = (checkin: any) => {
+    const name = selectedStaff?.full_name || "Staff";
+
+    downloadRecordPdf(
+      `Check-in — ${checkin.patient_name || "Resident"}`,
+      [
+        { label: "Staff", value: name },
+        { label: "Resident", value: checkin.patient_name },
+        { label: "Completed", value: formatUKTime(checkin.submitted_at) },
+        {
+          label: "Scheduled Time",
+          value: formatUKTime(checkin.scheduled_time),
+        },
+        { label: "Status", value: checkin.status },
+
+        { label: "Wellbeing", value: formatValue(checkin.wellbeing) },
+        { label: "Wellbeing Notes", value: checkin.wellbeing_notes },
+
+        { label: "Mood", value: formatValue(checkin.mood) },
+        { label: "Mood Notes", value: checkin.mood_notes },
+
+        { label: "Hydration", value: formatValue(checkin.hydration) },
+        { label: "Hydration Notes", value: checkin.hydration_notes },
+
+        { label: "Safety", value: formatValue(checkin.safety) },
+        { label: "Safety Notes", value: checkin.safety_notes },
+
+        { label: "Engagement", value: formatValue(checkin.engagement) },
+        { label: "Engagement Notes", value: checkin.engagement_notes },
+
+        { label: "Mobility", value: formatValue(checkin.mobility) },
+        { label: "Mobility Notes", value: checkin.mobility_notes },
+
+        { label: "Medication", value: formatValue(checkin.medication) },
+        { label: "Medication Notes", value: checkin.medication_notes },
+
+        { label: "Privacy", value: formatValue(checkin.privacy) },
+        { label: "Privacy Notes", value: checkin.privacy_notes },
+
+        { label: "Support", value: formatValue(checkin.support) },
+        { label: "Support Notes", value: checkin.support_notes },
+
+        { label: "Safeguarding", value: formatValue(checkin.safeguarding) },
+        { label: "Safeguarding Notes", value: checkin.safeguarding_notes },
+      ],
+      `checkin-${slugify(checkin.patient_name || "resident")}-${checkin.id}.pdf`,
+    );
+  };
+  const exportHandoversPdf = () => {
+    const name = selectedStaff?.full_name || "Staff";
+    downloadListPdf(
+      `Handovers — ${name}`,
+      `${DATE_FILTER_LABEL[filterHandovers]} · ${filteredHandovers.length} handover(s)`,
+      ["Resident", "Submitted", "Wellbeing", "Concerns / Incidents"],
+      filteredHandovers.map((h) => [
+        h.patient_name || "—",
+        formatUKTime(h.created_at) || "—",
+        h.wellbeing_summary || "—",
+        h.concerns_incidents || "—",
+      ]),
+      `handovers-${slugify(name)}-${filterHandovers}.pdf`,
+    );
+  };
+
+  const exportHandoverPdf = (handover: any) => {
+    const name = selectedStaff?.full_name || "Staff";
+    downloadRecordPdf(
+      `Handover — ${handover.patient_name || "Resident"}`,
+      [
+        { label: "Staff", value: name },
+        { label: "Resident", value: handover.patient_name },
+        { label: "Submitted", value: formatUKTime(handover.created_at) },
+        { label: "Wellbeing", value: handover.wellbeing_summary },
+        { label: "Care Summary", value: handover.care_summary },
+        { label: "Concerns / Incidents", value: handover.concerns_incidents },
+        { label: "Escalations", value: handover.escalations },
+        { label: "Family Communication", value: handover.family_communication },
+        { label: "Recommendations", value: handover.recommendations },
+      ],
+      `handover-${slugify(handover.patient_name || "resident")}-${handover.id}.pdf`,
+    );
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#03060b]">
@@ -314,6 +828,8 @@ export default function AdminStaff() {
                         { key: "shifts", label: "Shifts" },
                         { key: "checkins", label: "Check-ins" },
                         { key: "handovers", label: "Handovers" },
+                        { key: "documents", label: "Documents" },
+                        { key: "training", label: "Training" },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -323,7 +839,9 @@ export default function AdminStaff() {
                                 | "info"
                                 | "shifts"
                                 | "checkins"
-                                | "handovers",
+                                | "handovers"
+                                | "documents"
+                                | "training",
                             )
                           }
                           className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
@@ -417,92 +935,133 @@ export default function AdminStaff() {
 
                     {activeTab === "shifts" && (
                       <div className="space-y-5">
-                        <input
-                          type="text"
-                          value={searchShifts}
-                          onChange={(e) => setSearchShifts(e.target.value)}
-                          placeholder="Search shifts..."
-                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                        />
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col md:flex-row gap-3">
+                            <input
+                              type="text"
+                              value={searchShifts}
+                              onChange={(e) => setSearchShifts(e.target.value)}
+                              placeholder="Search shifts..."
+                              className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+
+                            <DateFilterSelect
+                              value={filterShifts}
+                              onChange={setFilterShifts}
+                            />
+
+                            <DownloadPdfButton onClick={exportShiftsPdf} />
+                          </div>
+
+                          {filterShifts === "custom" && (
+                            <div className="flex gap-3 flex-wrap items-center">
+                              <input
+                                type="date"
+                                value={shiftFrom}
+                                onChange={(e) => setShiftFrom(e.target.value)}
+                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+
+                              <input
+                                type="date"
+                                value={shiftTo}
+                                onChange={(e) => setShiftTo(e.target.value)}
+                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShiftSearchTick((v) => v + 1)}
+                                className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 font-medium transition"
+                              >
+                                Search
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Summary based on current filter */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <SummaryStat
+                            label="Shifts Shown"
+                            value={filteredShifts.length}
+                          />
+                          <SummaryStat
+                            label="Completed Shifts"
+                            value={filteredCompletedShifts.length}
+                          />
+                          <SummaryStat
+                            label="Total Hours Worked"
+                            value={`${filteredTotalHoursWorked.toFixed(1)} hrs`}
+                          />
+                        </div>
 
                         <div className="space-y-4">
-                          {staffShifts
-                            .filter((shift) => {
-                              const q = searchShifts.toLowerCase();
-                              return (
-                                (shift.patient_name || "")
-                                  .toLowerCase()
-                                  .includes(q) ||
-                                (shift.shift_date || "")
-                                  .toLowerCase()
-                                  .includes(q) ||
-                                (shift.status || "").toLowerCase().includes(q)
-                              );
-                            })
-                            .map((shift) => (
-                              <details
-                                key={shift.id}
-                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
-                              >
-                                <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                  <div>
-                                    <p className="font-semibold text-black dark:text-white">
-                                      {shift.patient_name || "Resident"}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {shift.shift_date || "No date"}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-3 self-end md:self-auto">
-                                    <span className="text-sm font-medium text-sky-500">
-                                      {shift.status || "Active"}
-                                    </span>
-
-                                    <svg
-                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    </svg>
-                                  </div>
-                                </summary>
-
-                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                  <InfoCard
-                                    title="Resident"
-                                    value={shift.patient_name}
-                                  />
-                                  <InfoCard
-                                    title="Date"
-                                    value={shift.shift_date}
-                                  />
-                                  <InfoCard
-                                    title="Start"
-                                    value={shift.start_time}
-                                  />
-                                  <InfoCard
-                                    title="End"
-                                    value={shift.end_time}
-                                  />
-                                  <InfoCard
-                                    title="Status"
-                                    value={shift.status}
-                                  />
+                          {filteredShifts.map((shift) => (
+                            <details
+                              key={shift.id}
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                            >
+                              <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-black dark:text-white">
+                                    {shift.patient_name || "Resident"}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {shift.shift_date || "No date"}
+                                  </p>
                                 </div>
-                              </details>
-                            ))}
 
-                          {staffShifts.length === 0 && (
+                                <div className="flex items-center gap-3 self-end md:self-auto">
+                                  <span className="text-sm font-medium text-sky-500">
+                                    {shift.status || "Active"}
+                                  </span>
+
+                                  <DownloadPdfButton
+                                    small
+                                    label="PDF"
+                                    onClick={() => exportShiftPdf(shift)}
+                                  />
+
+                                  <svg
+                                    className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </div>
+                              </summary>
+
+                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <InfoCard
+                                  title="Resident"
+                                  value={shift.patient_name}
+                                />
+                                <InfoCard
+                                  title="Date"
+                                  value={shift.shift_date}
+                                />
+                                <InfoCard
+                                  title="Start"
+                                  value={shift.start_time}
+                                />
+                                <InfoCard title="End" value={shift.end_time} />
+                                <InfoCard title="Status" value={shift.status} />
+                              </div>
+                            </details>
+                          ))}
+
+                          {filteredShifts.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
-                              No shifts assigned to this staff member.
+                              No shifts found for this filter.
                             </div>
                           )}
                         </div>
@@ -511,130 +1070,274 @@ export default function AdminStaff() {
 
                     {activeTab === "checkins" && (
                       <div className="space-y-5">
-                        <input
-                          type="text"
-                          value={searchCheckins}
-                          onChange={(e) => setSearchCheckins(e.target.value)}
-                          placeholder="Search check-ins..."
-                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                        />
+                        <div className="flex flex-col md:flex-row gap-3">
+                          <input
+                            type="text"
+                            value={searchCheckins}
+                            onChange={(e) => setSearchCheckins(e.target.value)}
+                            placeholder="Search check-ins..."
+                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                          />
+
+                          <DateFilterSelect
+                            value={filterCheckins}
+                            onChange={setFilterCheckins}
+                          />
+
+                          <DownloadPdfButton onClick={exportCheckinsPdf} />
+                        </div>
+
+                        {filterCheckins === "custom" && (
+                          <div className="flex gap-3 flex-wrap items-center">
+                            <input
+                              type="date"
+                              value={checkinFrom}
+                              onChange={(e) => setCheckinFrom(e.target.value)}
+                              className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                              onClick={(e) => e.currentTarget.showPicker?.()}
+                            />
+
+                            <input
+                              type="date"
+                              value={checkinTo}
+                              onChange={(e) => setCheckinTo(e.target.value)}
+                              className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                              onClick={(e) => e.currentTarget.showPicker?.()}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCheckinSearchTick((v) => v + 1)}
+                              className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 font-medium transition"
+                            >
+                              Search
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <SummaryStat
+                            label="Check-ins Shown"
+                            value={filteredCheckins.length}
+                          />
+                          <SummaryStat
+                            label="Filter"
+                            value={DATE_FILTER_LABEL[filterCheckins]}
+                          />
+                        </div>
 
                         <div className="space-y-4">
-                          {staffCheckins
-                            .filter((checkin) => {
-                              const q = searchCheckins.toLowerCase();
-
-                              const searchable = [
-                                checkin.patient_name,
-                                checkin.status,
-                                checkin.mood,
-                                checkin.notes,
-                                checkin.observations,
-                                checkin.comments,
-                                checkin.submitted_at,
-                                formatUKTime(checkin.submitted_at),
-                              ]
-                                .map((value) => {
-                                  if (value == null) return "";
-                                  if (typeof value === "string")
-                                    return value.toLowerCase();
-                                  try {
-                                    return JSON.stringify(value).toLowerCase();
-                                  } catch {
-                                    return String(value).toLowerCase();
-                                  }
-                                })
-                                .join(" ");
-
-                              return searchable.includes(q);
-                            })
-                            .map((checkin) => (
-                              <details
-                                key={checkin.id}
-                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
-                              >
-                                <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                  <div>
-                                    <p className="font-semibold text-black dark:text-white">
-                                      {checkin.patient_name || "Resident"}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {formatUKTime(checkin.submitted_at)}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-3 self-end md:self-auto">
-                                    <span className="text-sm font-medium text-sky-500">
-                                      {checkin.status || "Completed"}
-                                    </span>
-
-                                    <svg
-                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    </svg>
-                                  </div>
-                                </summary>
-
-                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <InfoCard
-                                    title="Resident"
-                                    value={checkin.patient_name}
-                                  />
-                                  <InfoCard
-                                    title="Completed"
-                                    value={formatUKTime(checkin.submitted_at)}
-                                  />
-                                  <InfoCard
-                                    title="Status"
-                                    value={checkin.status}
-                                  />
-                                  <InfoCard title="Mood" value={checkin.mood} />
-                                  <InfoCard
-                                    title="Hydration"
-                                    value={checkin.hydration}
-                                  />
-                                  <InfoCard
-                                    title="Mobility"
-                                    value={checkin.mobility}
-                                  />
-                                  <InfoCard
-                                    title="Medication"
-                                    value={checkin.medication}
-                                  />
-                                  <InfoCard
-                                    title="Observations"
-                                    value={
-                                      typeof (
-                                        checkin.notes ??
-                                        checkin.observations ??
-                                        checkin.comments
-                                      ) === "object"
-                                        ? JSON.stringify(
-                                            checkin.notes ??
-                                              checkin.observations ??
-                                              checkin.comments,
-                                          )
-                                        : (checkin.notes ??
-                                          checkin.observations ??
-                                          checkin.comments)
-                                    }
-                                  />
+                          {filteredCheckins.map((checkin) => (
+                            <details
+                              key={checkin.id}
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                            >
+                              <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                <div>
+                                  <p className="font-semibold text-black dark:text-white">
+                                    {checkin.patient_name || "Resident"}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {formatUKTime(checkin.submitted_at)}
+                                  </p>
                                 </div>
-                              </details>
-                            ))}
 
-                          {staffCheckins.length === 0 && (
+                                <div className="flex items-center gap-3 self-end md:self-auto">
+                                  <span className="text-sm font-medium text-sky-500">
+                                    {checkin.status || "Completed"}
+                                  </span>
+
+                                  <DownloadPdfButton
+                                    small
+                                    label="PDF"
+                                    onClick={() => exportCheckinPdf(checkin)}
+                                  />
+
+                                  <svg
+                                    className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </div>
+                              </summary>
+
+                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <InfoCard
+                                  title="Resident"
+                                  value={checkin.patient_name}
+                                />
+                                <InfoCard
+                                  title="Completed"
+                                  value={formatUKTime(checkin.submitted_at)}
+                                />
+                                <InfoCard
+                                  title="Status"
+                                  value={checkin.status}
+                                />
+
+                                <InfoCard
+                                  title="Wellbeing"
+                                  value={
+                                    Array.isArray(checkin.wellbeing)
+                                      ? checkin.wellbeing.join(", ")
+                                      : checkin.wellbeing
+                                        ? JSON.stringify(checkin.wellbeing)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Wellbeing Notes"
+                                  value={checkin.wellbeing_notes}
+                                />
+
+                                <InfoCard
+                                  title="Mood"
+                                  value={
+                                    Array.isArray(checkin.mood)
+                                      ? checkin.mood.join(", ")
+                                      : checkin.mood
+                                        ? JSON.stringify(checkin.mood)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Mood Notes"
+                                  value={checkin.mood_notes}
+                                />
+
+                                <InfoCard
+                                  title="Hydration"
+                                  value={
+                                    Array.isArray(checkin.hydration)
+                                      ? checkin.hydration.join(", ")
+                                      : checkin.hydration
+                                        ? JSON.stringify(checkin.hydration)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Hydration Notes"
+                                  value={checkin.hydration_notes}
+                                />
+
+                                <InfoCard
+                                  title="Safety"
+                                  value={
+                                    Array.isArray(checkin.safety)
+                                      ? checkin.safety.join(", ")
+                                      : checkin.safety
+                                        ? JSON.stringify(checkin.safety)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Safety Notes"
+                                  value={checkin.safety_notes}
+                                />
+
+                                <InfoCard
+                                  title="Engagement"
+                                  value={
+                                    Array.isArray(checkin.engagement)
+                                      ? checkin.engagement.join(", ")
+                                      : checkin.engagement
+                                        ? JSON.stringify(checkin.engagement)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Engagement Notes"
+                                  value={checkin.engagement_notes}
+                                />
+
+                                <InfoCard
+                                  title="Mobility"
+                                  value={
+                                    Array.isArray(checkin.mobility)
+                                      ? checkin.mobility.join(", ")
+                                      : checkin.mobility
+                                        ? JSON.stringify(checkin.mobility)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Mobility Notes"
+                                  value={checkin.mobility_notes}
+                                />
+
+                                <InfoCard
+                                  title="Medication"
+                                  value={
+                                    Array.isArray(checkin.medication)
+                                      ? checkin.medication.join(", ")
+                                      : checkin.medication
+                                        ? JSON.stringify(checkin.medication)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Medication Notes"
+                                  value={checkin.medication_notes}
+                                />
+
+                                <InfoCard
+                                  title="Privacy"
+                                  value={
+                                    Array.isArray(checkin.privacy)
+                                      ? checkin.privacy.join(", ")
+                                      : checkin.privacy
+                                        ? JSON.stringify(checkin.privacy)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Privacy Notes"
+                                  value={checkin.privacy_notes}
+                                />
+
+                                <InfoCard
+                                  title="Support"
+                                  value={
+                                    Array.isArray(checkin.support)
+                                      ? checkin.support.join(", ")
+                                      : checkin.support
+                                        ? JSON.stringify(checkin.support)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Support Notes"
+                                  value={checkin.support_notes}
+                                />
+
+                                <InfoCard
+                                  title="Safeguarding"
+                                  value={
+                                    Array.isArray(checkin.safeguarding)
+                                      ? checkin.safeguarding.join(", ")
+                                      : checkin.safeguarding
+                                        ? JSON.stringify(checkin.safeguarding)
+                                        : "—"
+                                  }
+                                />
+                                <InfoCard
+                                  title="Safeguarding Notes"
+                                  value={checkin.safeguarding_notes}
+                                />
+                              </div>
+                            </details>
+                          ))}
+
+                          {filteredCheckins.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
-                              No check-ins completed by this staff member.
+                              No check-ins found for this filter.
                             </div>
                           )}
                         </div>
@@ -643,109 +1346,161 @@ export default function AdminStaff() {
 
                     {activeTab === "handovers" && (
                       <div className="space-y-5">
-                        <input
-                          type="text"
-                          value={searchHandovers}
-                          onChange={(e) => setSearchHandovers(e.target.value)}
-                          placeholder="Search handovers..."
-                          className="w-full rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                        />
+                        <div className="flex flex-col md:flex-row gap-3">
+                          <input
+                            type="text"
+                            value={searchHandovers}
+                            onChange={(e) => setSearchHandovers(e.target.value)}
+                            placeholder="Search handovers..."
+                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                          />
+
+                          <DateFilterSelect
+                            value={filterHandovers}
+                            onChange={setFilterHandovers}
+                          />
+                          {filterHandovers === "custom" && (
+                            <div className="flex gap-3 flex-wrap items-center">
+                              <input
+                                type="date"
+                                value={handoverFrom}
+                                onChange={(e) =>
+                                  setHandoverFrom(e.target.value)
+                                }
+                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+
+                              <input
+                                type="date"
+                                value={handoverTo}
+                                onChange={(e) => setHandoverTo(e.target.value)}
+                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setHandoverSearchTick((v) => v + 1)
+                                }
+                                className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 font-medium transition"
+                              >
+                                Search
+                              </button>
+                            </div>
+                          )}
+                          <DownloadPdfButton onClick={exportHandoversPdf} />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <SummaryStat
+                            label="Handovers Shown"
+                            value={filteredHandovers.length}
+                          />
+                          <SummaryStat
+                            label="Filter"
+                            value={DATE_FILTER_LABEL[filterHandovers]}
+                          />
+                        </div>
 
                         <div className="space-y-4">
-                          {staffHandovers
-                            .filter((handover) => {
-                              const q = searchHandovers.toLowerCase();
-                              return (
-                                (handover.patient_name || "")
-                                  .toLowerCase()
-                                  .includes(q) ||
-                                (handover.concerns_incidents || "")
-                                  .toLowerCase()
-                                  .includes(q) ||
-                                (handover.wellbeing_summary || "")
-                                  .toLowerCase()
-                                  .includes(q)
-                              );
-                            })
-                            .map((handover) => (
-                              <details
-                                key={handover.id}
-                                className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
-                              >
-                                <summary className="cursor-pointer list-none px-5 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-sky-50 dark:hover:bg-sky-500/5 transition-colors">
-                                  <div>
-                                    <p className="font-semibold text-black dark:text-white">
-                                      {handover.patient_name || "Resident"}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {formatUKTime(handover.created_at)}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-3 self-end md:self-auto">
-                                    <span className="text-sm font-medium text-emerald-500">
-                                      Submitted
-                                    </span>
-
-                                    <svg
-                                      className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    </svg>
-                                  </div>
-                                </summary>
-
-                                <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <InfoCard
-                                    title="Resident"
-                                    value={handover.patient_name}
-                                  />
-                                  <InfoCard
-                                    title="Submitted"
-                                    value={formatUKTime(handover.created_at)}
-                                  />
-                                  <InfoCard
-                                    title="Wellbeing"
-                                    value={handover.wellbeing_summary}
-                                  />
-                                  <InfoCard
-                                    title="Care Summary"
-                                    value={handover.care_summary}
-                                  />
-                                  <InfoCard
-                                    title="Concerns / Incidents"
-                                    value={handover.concerns_incidents}
-                                  />
-                                  <InfoCard
-                                    title="Escalations"
-                                    value={handover.escalations}
-                                  />
-                                  <InfoCard
-                                    title="Family Communication"
-                                    value={handover.family_communication}
-                                  />
-                                  <InfoCard
-                                    title="Recommendations"
-                                    value={handover.recommendations}
-                                  />
+                          {filteredHandovers.map((handover) => (
+                            <details
+                              key={handover.id}
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                            >
+                              <summary className="cursor-pointer list-none px-5 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-sky-50 dark:hover:bg-sky-500/5 transition-colors">
+                                <div>
+                                  <p className="font-semibold text-black dark:text-white">
+                                    {handover.patient_name || "Resident"}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {formatUKTime(handover.created_at)}
+                                  </p>
                                 </div>
-                              </details>
-                            ))}
 
-                          {staffHandovers.length === 0 && (
+                                <div className="flex items-center gap-3 self-end md:self-auto">
+                                  <span className="text-sm font-medium text-emerald-500">
+                                    Submitted
+                                  </span>
+
+                                  <DownloadPdfButton
+                                    small
+                                    label="PDF"
+                                    onClick={() => exportHandoverPdf(handover)}
+                                  />
+
+                                  <svg
+                                    className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </div>
+                              </summary>
+
+                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <InfoCard
+                                  title="Resident"
+                                  value={handover.patient_name}
+                                />
+                                <InfoCard
+                                  title="Submitted"
+                                  value={formatUKTime(handover.created_at)}
+                                />
+                                <InfoCard
+                                  title="Wellbeing"
+                                  value={handover.wellbeing_summary}
+                                />
+                                <InfoCard
+                                  title="Care Summary"
+                                  value={handover.care_summary}
+                                />
+                                <InfoCard
+                                  title="Concerns / Incidents"
+                                  value={handover.concerns_incidents}
+                                />
+                                <InfoCard
+                                  title="Escalations"
+                                  value={handover.escalations}
+                                />
+                                <InfoCard
+                                  title="Family Communication"
+                                  value={handover.family_communication}
+                                />
+                                <InfoCard
+                                  title="Recommendations"
+                                  value={handover.recommendations}
+                                />
+                              </div>
+                            </details>
+                          ))}
+
+                          {filteredHandovers.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
-                              No handovers submitted by this staff member.
+                              No handovers found for this filter.
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {activeTab === "documents" && (
+                      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
+                        Documents module coming soon.
+                      </div>
+                    )}
+
+                    {activeTab === "training" && (
+                      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
+                        Training module coming soon.
                       </div>
                     )}
                   </div>
@@ -781,6 +1536,23 @@ function InfoCard({ title, value, editable = false, onChange }: any) {
           {value || "—"}
         </p>
       )}
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#070c14] px-5 py-4">
+      <p className="text-xs uppercase tracking-wide text-sky-500 font-semibold mb-1">
+        {label}
+      </p>
+      <p className="text-xl font-bold text-black dark:text-white">{value}</p>
     </div>
   );
 }
