@@ -479,32 +479,6 @@ export default function AdminStaff() {
     setUploadingDocument(false);
   };
 
-  const deleteDocument = async (document: any) => {
-    if (!organizationId) return;
-    if (!confirm("Delete this document?")) return;
-
-    if (document.file_path) {
-      await supabase.storage
-        .from("staff-documents")
-        .remove([document.file_path]);
-    }
-
-    const { error } = await supabase
-      .from("staff_documents")
-      .delete()
-      .eq("id", document.id);
-
-    if (error) {
-      console.error(error);
-      alert("Failed to delete document");
-      return;
-    }
-
-    if (selectedStaff) {
-      loadStaffDocuments(selectedStaff.id, organizationId);
-    }
-  };
-
   const uploadTraining = async () => {
     if (!selectedStaff || !organizationId) return;
     if (!newTrainingName.trim()) {
@@ -562,32 +536,6 @@ export default function AdminStaff() {
     setNewTrainingIssuedDate("");
     await loadStaffTraining(selectedStaff.id, organizationId);
     setUploadingTraining(false);
-  };
-
-  const deleteTraining = async (training: any) => {
-    if (!organizationId) return;
-    if (!confirm("Delete this training record?")) return;
-
-    if (training.file_path) {
-      await supabase.storage
-        .from("staff-training")
-        .remove([training.file_path]);
-    }
-
-    const { error } = await supabase
-      .from("staff_training")
-      .delete()
-      .eq("id", training.id);
-
-    if (error) {
-      console.error(error);
-      alert("Failed to delete training record");
-      return;
-    }
-
-    if (selectedStaff) {
-      loadStaffTraining(selectedStaff.id, organizationId);
-    }
   };
 
   const saveStaff = async () => {
