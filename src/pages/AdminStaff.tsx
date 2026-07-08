@@ -84,7 +84,7 @@ function DateFilterSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as DateFilter)}
-      className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+      className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
     >
       <option value="all">All Time</option>
       <option value="week">This Week</option>
@@ -247,6 +247,22 @@ export default function AdminStaff() {
   const [shiftSearchTick, setShiftSearchTick] = useState(0);
   const [checkinSearchTick, setCheckinSearchTick] = useState(0);
   const [handoverSearchTick, setHandoverSearchTick] = useState(0);
+
+  // Documents tab
+  const [staffDocuments, setStaffDocuments] = useState<any[]>([]);
+  const [newDocumentName, setNewDocumentName] = useState("");
+  const [newDocumentFile, setNewDocumentFile] = useState<File | null>(null);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+
+  // Training tab
+  const [staffTraining, setStaffTraining] = useState<any[]>([]);
+  const [newTrainingName, setNewTrainingName] = useState("");
+  const [newTrainingFile, setNewTrainingFile] = useState<File | null>(null);
+  const [newTrainingStartDate, setNewTrainingStartDate] = useState("");
+  const [newTrainingEndDate, setNewTrainingEndDate] = useState("");
+  const [newTrainingIssuedDate, setNewTrainingIssuedDate] = useState("");
+  const [uploadingTraining, setUploadingTraining] = useState(false);
+
   useEffect(() => {
     loadStaff();
   }, []);
@@ -257,6 +273,8 @@ export default function AdminStaff() {
     loadStaffShifts(selectedStaff.id, organizationId);
     loadStaffCheckins(selectedStaff.id, organizationId);
     loadStaffHandovers(selectedStaff.id, organizationId);
+    loadStaffDocuments(selectedStaff.id, organizationId);
+    loadStaffTraining(selectedStaff.id, organizationId);
   }, [selectedStaff, organizationId]);
 
   const loadStaff = async () => {
@@ -361,6 +379,215 @@ export default function AdminStaff() {
     }
 
     setStaffHandovers(data || []);
+  };
+
+  const loadStaffDocuments = async (
+    staffId: string,
+    organizationId: string,
+  ) => {
+    const { data, error } = await supabase
+      .from("staff_documents")
+      .select("*")
+      .eq("staff_id", staffId)
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setStaffDocuments(data || []);
+  };
+
+  const loadStaffTraining = async (staffId: string, organizationId: string) => {
+    const { data, error } = await supabase
+      .from("staff_training")
+      .select("*")
+      .eq("staff_id", staffId)
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setStaffTraining(data || []);
+  };
+
+  const openPrivateFile = async (
+    bucket: "staff-documents" | "staff-training",
+    filePath: string,
+  ) => {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(filePath, 60 * 10);
+
+    if (error || !data?.signedUrl) {
+      console.error(error);
+      alert("Unable to open file");
+      return;
+    }
+
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const uploadDocument = async () => {
+    if (!selectedStaff || !organizationId) return;
+    if (!newDocumentName.trim() || !newDocumentFile) {
+      alert("Please provide a document name and choose a file");
+      return;
+    }
+
+    setUploadingDocument(true);
+
+    const filePath = `${organizationId}/${selectedStaff.id}/${Date.now()}-${newDocumentFile.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("staff-documents")
+      .upload(filePath, newDocumentFile);
+
+    if (uploadError) {
+      console.error(uploadError);
+      alert("Failed to upload the file");
+      setUploadingDocument(false);
+      return;
+    }
+
+    const { error: insertError } = await supabase
+      .from("staff_documents")
+      .insert({
+        staff_id: selectedStaff.id,
+        organization_id: organizationId,
+        name: newDocumentName.trim(),
+        file_path: filePath,
+        file_url: null,
+        file_name: newDocumentFile.name,
+      });
+
+    if (insertError) {
+      console.error(insertError);
+      alert("Failed to save document record");
+      setUploadingDocument(false);
+      return;
+    }
+
+    setNewDocumentName("");
+    setNewDocumentFile(null);
+    await loadStaffDocuments(selectedStaff.id, organizationId);
+    setUploadingDocument(false);
+  };
+
+  const deleteDocument = async (document: any) => {
+    if (!organizationId) return;
+    if (!confirm("Delete this document?")) return;
+
+    if (document.file_path) {
+      await supabase.storage
+        .from("staff-documents")
+        .remove([document.file_path]);
+    }
+
+    const { error } = await supabase
+      .from("staff_documents")
+      .delete()
+      .eq("id", document.id);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to delete document");
+      return;
+    }
+
+    if (selectedStaff) {
+      loadStaffDocuments(selectedStaff.id, organizationId);
+    }
+  };
+
+  const uploadTraining = async () => {
+    if (!selectedStaff || !organizationId) return;
+    if (!newTrainingName.trim()) {
+      alert("Please provide a training name");
+      return;
+    }
+
+    setUploadingTraining(true);
+
+    let filePath: string | null = null;
+    let fileUrl: string | null = null;
+
+    if (newTrainingFile) {
+      filePath = `${organizationId}/${selectedStaff.id}/${Date.now()}-${newTrainingFile.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("staff-training")
+        .upload(filePath, newTrainingFile);
+
+      if (uploadError) {
+        console.error(uploadError);
+        alert("Failed to upload the file");
+        setUploadingTraining(false);
+        return;
+      }
+
+      fileUrl = null;
+    }
+
+    const { error: insertError } = await supabase
+      .from("staff_training")
+      .insert({
+        staff_id: selectedStaff.id,
+        organization_id: organizationId,
+        name: newTrainingName.trim(),
+        file_path: filePath,
+        file_url: fileUrl,
+        file_name: newTrainingFile?.name || null,
+        start_date: newTrainingStartDate || null,
+        end_date: newTrainingEndDate || null,
+        issued_date: newTrainingIssuedDate || null,
+      });
+
+    if (insertError) {
+      console.error(insertError);
+      alert("Failed to save training record");
+      setUploadingTraining(false);
+      return;
+    }
+
+    setNewTrainingName("");
+    setNewTrainingFile(null);
+    setNewTrainingStartDate("");
+    setNewTrainingEndDate("");
+    setNewTrainingIssuedDate("");
+    await loadStaffTraining(selectedStaff.id, organizationId);
+    setUploadingTraining(false);
+  };
+
+  const deleteTraining = async (training: any) => {
+    if (!organizationId) return;
+    if (!confirm("Delete this training record?")) return;
+
+    if (training.file_path) {
+      await supabase.storage
+        .from("staff-training")
+        .remove([training.file_path]);
+    }
+
+    const { error } = await supabase
+      .from("staff_training")
+      .delete()
+      .eq("id", training.id);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to delete training record");
+      return;
+    }
+
+    if (selectedStaff) {
+      loadStaffTraining(selectedStaff.id, organizationId);
+    }
   };
 
   const saveStaff = async () => {
@@ -936,13 +1163,13 @@ export default function AdminStaff() {
                     {activeTab === "shifts" && (
                       <div className="space-y-5">
                         <div className="flex flex-col gap-3">
-                          <div className="flex flex-col md:flex-row gap-3">
+                          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-3 items-start">
                             <input
                               type="text"
                               value={searchShifts}
                               onChange={(e) => setSearchShifts(e.target.value)}
                               placeholder="Search shifts..."
-                              className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                              className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
                             />
 
                             <DateFilterSelect
@@ -959,7 +1186,7 @@ export default function AdminStaff() {
                                 type="date"
                                 value={shiftFrom}
                                 onChange={(e) => setShiftFrom(e.target.value)}
-                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                                 onClick={(e) => e.currentTarget.showPicker?.()}
                               />
 
@@ -967,7 +1194,7 @@ export default function AdminStaff() {
                                 type="date"
                                 value={shiftTo}
                                 onChange={(e) => setShiftTo(e.target.value)}
-                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                                 onClick={(e) => e.currentTarget.showPicker?.()}
                               />
                               <button
@@ -1001,7 +1228,7 @@ export default function AdminStaff() {
                           {filteredShifts.map((shift) => (
                             <details
                               key={shift.id}
-                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
                             >
                               <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
@@ -1040,7 +1267,7 @@ export default function AdminStaff() {
                                 </div>
                               </summary>
 
-                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <InfoCard
                                   title="Resident"
                                   value={shift.patient_name}
@@ -1060,7 +1287,7 @@ export default function AdminStaff() {
                           ))}
 
                           {filteredShifts.length === 0 && (
-                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.1] p-10 text-center text-gray-500 dark:text-gray-400">
                               No shifts found for this filter.
                             </div>
                           )}
@@ -1076,7 +1303,7 @@ export default function AdminStaff() {
                             value={searchCheckins}
                             onChange={(e) => setSearchCheckins(e.target.value)}
                             placeholder="Search check-ins..."
-                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
                           />
 
                           <DateFilterSelect
@@ -1093,7 +1320,7 @@ export default function AdminStaff() {
                               type="date"
                               value={checkinFrom}
                               onChange={(e) => setCheckinFrom(e.target.value)}
-                              className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                              className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                               onClick={(e) => e.currentTarget.showPicker?.()}
                             />
 
@@ -1101,7 +1328,7 @@ export default function AdminStaff() {
                               type="date"
                               value={checkinTo}
                               onChange={(e) => setCheckinTo(e.target.value)}
-                              className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                              className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                               onClick={(e) => e.currentTarget.showPicker?.()}
                             />
                             <button
@@ -1129,7 +1356,7 @@ export default function AdminStaff() {
                           {filteredCheckins.map((checkin) => (
                             <details
                               key={checkin.id}
-                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
                             >
                               <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
@@ -1168,7 +1395,7 @@ export default function AdminStaff() {
                                 </div>
                               </summary>
 
-                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 <InfoCard
                                   title="Resident"
                                   value={checkin.patient_name}
@@ -1336,7 +1563,7 @@ export default function AdminStaff() {
                           ))}
 
                           {filteredCheckins.length === 0 && (
-                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.1] p-10 text-center text-gray-500 dark:text-gray-400">
                               No check-ins found for this filter.
                             </div>
                           )}
@@ -1352,7 +1579,7 @@ export default function AdminStaff() {
                             value={searchHandovers}
                             onChange={(e) => setSearchHandovers(e.target.value)}
                             placeholder="Search handovers..."
-                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                            className="flex-1 rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
                           />
 
                           <DateFilterSelect
@@ -1367,7 +1594,7 @@ export default function AdminStaff() {
                                 onChange={(e) =>
                                   setHandoverFrom(e.target.value)
                                 }
-                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                                 onClick={(e) => e.currentTarget.showPicker?.()}
                               />
 
@@ -1375,7 +1602,7 @@ export default function AdminStaff() {
                                 type="date"
                                 value={handoverTo}
                                 onChange={(e) => setHandoverTo(e.target.value)}
-                                className="rounded-xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 px-4 py-3"
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3"
                                 onClick={(e) => e.currentTarget.showPicker?.()}
                               />
                               <button
@@ -1407,7 +1634,7 @@ export default function AdminStaff() {
                           {filteredHandovers.map((handover) => (
                             <details
                               key={handover.id}
-                              className="group rounded-2xl border border-black/10 dark:border-white/[0.06] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
+                              className="group rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 overflow-hidden transition-all duration-200"
                             >
                               <summary className="cursor-pointer list-none px-5 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-sky-50 dark:hover:bg-sky-500/5 transition-colors">
                                 <div>
@@ -1446,7 +1673,7 @@ export default function AdminStaff() {
                                 </div>
                               </summary>
 
-                              <div className="border-t border-black/10 dark:border-white/[0.06] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <InfoCard
                                   title="Resident"
                                   value={handover.patient_name}
@@ -1484,7 +1711,7 @@ export default function AdminStaff() {
                           ))}
 
                           {filteredHandovers.length === 0 && (
-                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.06] p-10 text-center text-gray-500 dark:text-gray-400">
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.1] p-10 text-center text-gray-500 dark:text-gray-400">
                               No handovers found for this filter.
                             </div>
                           )}
@@ -1493,14 +1720,210 @@ export default function AdminStaff() {
                     )}
 
                     {activeTab === "documents" && (
-                      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
-                        Documents module coming soon.
+                      <div className="space-y-5">
+                        <div className="rounded-2xl border border-black/10 dark:border-white/[0.15] bg-white dark:bg-[#060b12]/95 p-5 space-y-3">
+                          <h3 className="font-semibold text-black dark:text-white">
+                            Upload Document
+                          </h3>
+
+                          <div className="flex flex-col md:flex-row gap-3">
+                            <input
+                              type="text"
+                              value={newDocumentName}
+                              onChange={(e) =>
+                                setNewDocumentName(e.target.value)
+                              }
+                              placeholder="Document name"
+                              className="w-full min-w-0 rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+
+                            <input
+                              type="file"
+                              onChange={(e) =>
+                                setNewDocumentFile(e.target.files?.[0] || null)
+                              }
+                              className="w-full min-w-0 overflow-hidden rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-500 file:text-white file:px-3 file:py-1.5 file:max-w-full file:truncate"
+                            />
+                          </div>
+                          <div className="flex justify-end pt-2">
+                            <button
+                              type="button"
+                              onClick={uploadDocument}
+                              disabled={uploadingDocument}
+                              className="rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-6 py-3 font-medium transition"
+                            >
+                              {uploadingDocument ? "Uploading..." : "Upload"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          {staffDocuments.map((document) => (
+                            <div
+                              key={document.id}
+                              className="rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                            >
+                              <div>
+                                <p className="font-semibold text-black dark:text-white">
+                                  {document.name || "Untitled document"}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {formatUKTime(document.created_at)}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-4 self-end md:self-auto">
+                                {document.file_path && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openPrivateFile(
+                                        "staff-documents",
+                                        document.file_path,
+                                      )
+                                    }
+                                    className="text-sky-500 text-sm font-medium hover:underline"
+                                  >
+                                    View
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {staffDocuments.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.1] p-10 text-center text-gray-500 dark:text-gray-400">
+                              No documents uploaded yet.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
                     {activeTab === "training" && (
-                      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-8 text-center text-gray-500 dark:text-gray-400">
-                        Training module coming soon.
+                      <div className="space-y-5">
+                        <div className="rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 p-5 space-y-3">
+                          <h3 className="font-semibold text-black dark:text-white">
+                            Add Training Record
+                          </h3>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              value={newTrainingName}
+                              onChange={(e) =>
+                                setNewTrainingName(e.target.value)
+                              }
+                              placeholder="Training name"
+                              className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+
+                            <input
+                              type="file"
+                              onChange={(e) =>
+                                setNewTrainingFile(e.target.files?.[0] || null)
+                              }
+                              className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-500 file:text-white file:px-3 file:py-1.5"
+                            />
+
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs uppercase tracking-wide text-gray-500">
+                                Start Date
+                              </label>
+                              <input
+                                type="date"
+                                value={newTrainingStartDate}
+                                onChange={(e) =>
+                                  setNewTrainingStartDate(e.target.value)
+                                }
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs uppercase tracking-wide text-gray-500">
+                                End Date
+                              </label>
+                              <input
+                                type="date"
+                                value={newTrainingEndDate}
+                                onChange={(e) =>
+                                  setNewTrainingEndDate(e.target.value)
+                                }
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs uppercase tracking-wide text-gray-500">
+                                Issued Date
+                              </label>
+                              <input
+                                type="date"
+                                value={newTrainingIssuedDate}
+                                onChange={(e) =>
+                                  setNewTrainingIssuedDate(e.target.value)
+                                }
+                                className="rounded-xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-4 py-3 text-black dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                onClick={(e) => e.currentTarget.showPicker?.()}
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={uploadTraining}
+                            disabled={uploadingTraining}
+                            className="rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-6 py-3 font-medium transition"
+                          >
+                            {uploadingTraining ? "Saving..." : "Add Training"}
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          {staffTraining.map((training) => (
+                            <div
+                              key={training.id}
+                              className="rounded-2xl border border-black/10 dark:border-white/[0.1] bg-white dark:bg-[#060b12]/95 px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                            >
+                              <div>
+                                <p className="font-semibold text-black dark:text-white">
+                                  {training.name || "Untitled training"}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Start: {training.start_date || "—"} · End:{" "}
+                                  {training.end_date || "—"} · Issued:{" "}
+                                  {training.issued_date || "—"}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-4 self-end md:self-auto">
+                                {training.file_path && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openPrivateFile(
+                                        "staff-training",
+                                        training.file_path,
+                                      )
+                                    }
+                                    className="text-sky-500 text-sm font-medium hover:underline"
+                                  >
+                                    View
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {staffTraining.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/[0.1] p-10 text-center text-gray-500 dark:text-gray-400">
+                              No training records yet.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
