@@ -151,7 +151,7 @@ function QuickAction({
 
 export default function AdminInvoicesHome() {
   const [adminName, setAdminName] = useState("Admin");
-  const [organizationId, setOrganizationId] = useState("");
+  const [, setOrganizationId] = useState("");
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [companyName, setCompanyName] = useState("");
