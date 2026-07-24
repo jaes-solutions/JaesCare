@@ -73,7 +73,12 @@ export default function StaffClient() {
 
       const { data: shift, error: shiftError } = await supabase
         .from("shifts")
-        .select("*")
+        .select(
+          `
+          *,
+          patient:profiles!shifts_patient_id_fkey(full_name)
+        `,
+        )
         .eq("staff_id", session.user.id)
         .eq("shift_date", today)
         .eq("status", "active")
@@ -94,7 +99,7 @@ export default function StaffClient() {
 
       setPatient({
         id: shift.patient_id,
-        name: shift.patient_name,
+        name: shift.patient?.full_name || shift.patient_name,
       });
 
       const { data: details } = await supabase

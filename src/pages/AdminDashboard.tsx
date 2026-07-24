@@ -188,7 +188,13 @@ export default function AdminDashboard() {
       // Only get shifts belonging to this admin's organization
       const { data: shifts, error: shiftsError } = await supabase
         .from("shifts")
-        .select("*")
+        .select(
+          `
+          *,
+          patient:profiles!shifts_patient_id_fkey(full_name),
+          staff:profiles!shifts_staff_id_fkey(full_name)
+        `,
+        )
         .eq("organization_id", profile.organization_id)
         .order("shift_date", { ascending: false })
         .order("start_time", { ascending: false });
@@ -805,13 +811,13 @@ export default function AdminDashboard() {
                                 <span className="text-gray-600 dark:text-gray-400">
                                   Staff:
                                 </span>{" "}
-                                {shift.staff_name}
+                                {shift.staff?.full_name || shift.staff_name}
                               </p>
                               <p className="text-emerald-300 text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">
                                   Resident:
                                 </span>{" "}
-                                {shift.patient_name}
+                                {shift.patient?.full_name || shift.patient_name}
                               </p>
                             </div>
                           </div>

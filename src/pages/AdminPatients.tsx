@@ -84,15 +84,61 @@ export default function AdminPatients() {
   const savePatientDetails = async () => {
     if (!selectedPatient) return;
 
-    const { error } = await supabase.from("patient_details").upsert({
-      profile_id: selectedPatient.id,
-      ...(selectedPatient.patient_details || {}),
-    });
+    const firstName = (
+      selectedPatient.patient_details?.first_name || ""
+    ).trim();
+    const lastName = (selectedPatient.patient_details?.last_name || "").trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-    if (error) {
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        full_name: fullName || selectedPatient.full_name,
+        email: selectedPatient.email,
+      })
+      .eq("id", selectedPatient.id);
+
+    if (profileError) {
+      alert("Failed to update profile");
+      return;
+    }
+
+    const { error: detailsError } = await supabase
+      .from("patient_details")
+      .upsert({
+        profile_id: selectedPatient.id,
+        ...(selectedPatient.patient_details || {}),
+      });
+
+    if (detailsError) {
       alert("Failed to save patient details");
       return;
     }
+
+    setSelectedPatient((prev: any) =>
+      prev
+        ? {
+            ...prev,
+            full_name: fullName || prev.full_name,
+          }
+        : prev,
+    );
+
+    setPatients((prev) =>
+      prev.map((patient) =>
+        patient.id === selectedPatient.id
+          ? {
+              ...patient,
+              full_name: fullName || patient.full_name,
+              email: selectedPatient.email,
+            }
+          : patient,
+      ),
+    );
+
+    // Refresh check-ins/handovers so the resident-name column in those
+    // tabs reflects the rename immediately, without a full page reload.
+    loadPatientSummary();
 
     setIsEditing(false);
     alert("Patient details saved successfully");
@@ -109,11 +155,23 @@ export default function AdminPatients() {
 
       setCheckinCount(totalCheckins || 0);
 
-      const { data: checkins } = await supabase
+      // Join live profile names instead of relying on the frozen
+      // patient_name / staff_name text columns on the checkins row.
+      const { data: checkins, error: checkinsError } = await supabase
         .from("checkins")
-        .select("*")
+        .select(
+          `
+            *,
+            patient:profiles!checkins_patient_id_fkey ( full_name ),
+            staff:profiles!checkins_staff_id_fkey ( full_name )
+          `,
+        )
         .eq("patient_id", selectedPatient.id)
         .order("submitted_at", { ascending: false });
+
+      if (checkinsError) {
+        console.error("Failed to load checkins", checkinsError);
+      }
 
       setPatientCheckins(checkins || []);
 
@@ -150,7 +208,8 @@ export default function AdminPatients() {
 
       const shiftIds = residentShifts.map((shift) => shift.id);
 
-      const { data: handovers } = await supabase
+      // Join live staff profile name instead of the frozen shifts.staff_name.
+      const { data: handovers, error: handoversError } = await supabase
         .from("handovers")
         .select(
           `
@@ -161,12 +220,16 @@ export default function AdminPatients() {
               shift_date,
               start_time,
               end_time,
-              staff_name
+              staff:profiles!shifts_staff_id_fkey ( full_name )
             )
           `,
         )
         .in("shift_id", shiftIds)
         .order("created_at", { ascending: false });
+
+      if (handoversError) {
+        console.error("Failed to load handovers", handoversError);
+      }
 
       setPatientHandovers(handovers || []);
 
@@ -217,8 +280,8 @@ export default function AdminPatients() {
     if (!q) return true;
 
     const values = [
-      checkin.staff_name,
-      checkin.patient_name,
+      checkin.staff?.full_name,
+      checkin.patient?.full_name,
       checkin.status,
       checkin.wellbeing_notes,
       checkin.mood_notes,
@@ -830,10 +893,12 @@ export default function AdminPatients() {
                                               className="even:bg-black/[0.02] dark:even:bg-white/[0.02] hover:bg-sky-400/5 transition-colors"
                                             >
                                               <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
-                                                {checkin.staff_name || "-"}
+                                                {checkin.staff?.full_name ||
+                                                  "-"}
                                               </td>
                                               <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
-                                                {checkin.patient_name || "-"}
+                                                {checkin.patient?.full_name ||
+                                                  "-"}
                                               </td>
                                               <td className="px-4 py-3 border-b border-black/10 dark:border-white/5 whitespace-nowrap align-top text-gray-800 dark:text-gray-100 hover:bg-sky-50 dark:hover:bg-sky-400/5 transition-colors">
                                                 {formatUKTime(
@@ -1011,7 +1076,8 @@ export default function AdminPatients() {
                                             Staff
                                           </p>
                                           <p>
-                                            {handover.shifts?.staff_name || "-"}
+                                            {handover.shifts?.staff
+                                              ?.full_name || "-"}
                                           </p>
                                         </div>
 

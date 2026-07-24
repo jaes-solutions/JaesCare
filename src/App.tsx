@@ -18,6 +18,8 @@ import AdminIncidents from "./pages/AdminIncidents";
 import StaffIncident from "./pages/StaffIncident";
 import StaffIncidentReporting from "./pages/StaffIncidentReporting";
 import AdminShifts from "./pages/AdminShifts";
+import AdminInvoicesHome from "./pages/AdminInvoicesHome";
+import AdminInvoices from "./pages/Invoicing";
 function App() {
   const [darkMode, setDarkMode] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
@@ -155,6 +157,22 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminShifts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/invoices"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminInvoicesHome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/invoices/manage"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminInvoices />
               </ProtectedRoute>
             }
           />

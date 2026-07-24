@@ -157,6 +157,18 @@ export default function HourlyCheck() {
           }
         }
         if (checkinsData) {
+          // Load all profiles to map patient_id to full_name
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, full_name");
+
+          const patientNames = new Map(
+            (profilesData ?? []).map((profile) => [
+              profile.id,
+              profile.full_name,
+            ]),
+          );
+
           const formattedChecks = checkinsData.map((check) => {
             const scheduled = parseUtcTimestamp(check.scheduled_time);
             const now = new Date();
@@ -166,8 +178,9 @@ export default function HourlyCheck() {
             let note = "Waiting for check-in";
             let completedAt = "--:--";
 
-            const currentDiffMinutes =
-              scheduled ? (now.getTime() - scheduled.getTime()) / 60000 : 0;
+            const currentDiffMinutes = scheduled
+              ? (now.getTime() - scheduled.getTime()) / 60000
+              : 0;
 
             if (check.submitted_at) {
               const submitted = parseUtcTimestamp(check.submitted_at);
@@ -215,7 +228,8 @@ export default function HourlyCheck() {
               ...check,
               id: check.id,
               shift_id: check.shift_id,
-              patient_name: check.patient_name,
+              patient_name:
+                patientNames.get(check.patient_id) || check.patient_name,
               staff_name: check.staff_name,
               scheduled_time: check.scheduled_time,
               date: formatUKShortDate(check.scheduled_time),
@@ -265,10 +279,9 @@ export default function HourlyCheck() {
 
       const scheduledTime = parseUtcTimestamp(selectedCheckin.scheduled_time);
 
-      const submittedDiffMinutes =
-        scheduledTime
-          ? (submittedAt.getTime() - scheduledTime.getTime()) / 60000
-          : 0;
+      const submittedDiffMinutes = scheduledTime
+        ? (submittedAt.getTime() - scheduledTime.getTime()) / 60000
+        : 0;
 
       let checkinStatus = "completed_on_time";
 
@@ -323,10 +336,14 @@ export default function HourlyCheck() {
       alert("Failed to save check-in");
     }
   }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white dark:bg-[#03060b] transition-colors">
-        <StaffSidebar onLogout={() => {}} />
+        <StaffSidebar onLogout={handleLogout} />
 
         <div className="flex-1 overflow-y-auto lg:ml-[245px] min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px]">
           <Navbar name={staffName} role={staffRole} />
@@ -350,7 +367,7 @@ export default function HourlyCheck() {
   }
   return (
     <div className="min-h-screen bg-white dark:bg-[#03060b] text-black dark:text-white flex overflow-hidden transition-colors duration-300">
-      <StaffSidebar onLogout={() => {}} />
+      <StaffSidebar onLogout={handleLogout} />
 
       <div className="flex-1 overflow-y-auto lg:ml-[245px] min-h-screen bg-gray-50 dark:bg-[#03060b] pt-[78px]">
         <Navbar name={staffName} role={staffRole} />
@@ -595,7 +612,9 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-black dark:text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">
+                      {item}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -632,7 +651,9 @@ export default function HourlyCheck() {
                       onChange={() => toggleValue(item, mood, setMood)}
                     />
 
-                    <span className="text-black dark:text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">
+                      {item}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -674,7 +695,9 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-black dark:text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">
+                      {item}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -711,7 +734,9 @@ export default function HourlyCheck() {
                       onChange={() => toggleValue(item, safety, setSafety)}
                     />
 
-                    <span className="text-black dark:text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">
+                      {item}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -752,7 +777,9 @@ export default function HourlyCheck() {
                       }
                     />
 
-                    <span className="text-black dark:text-white text-[14px]">{item}</span>
+                    <span className="text-black dark:text-white text-[14px]">
+                      {item}
+                    </span>
                   </label>
                 ))}
               </div>

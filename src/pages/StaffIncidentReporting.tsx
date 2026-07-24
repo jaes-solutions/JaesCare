@@ -166,15 +166,23 @@ const StaffIncidentReporting: React.FC = () => {
       // Load currently assigned resident from active shift
       const { data: shift } = await supabase
         .from("shifts")
-        .select("patient_name")
+        .select("patient_id")
         .eq("staff_id", session.user.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (shift?.patient_name) {
-        setClientName(shift.patient_name);
+      if (shift?.patient_id) {
+        const { data: residentProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", shift.patient_id)
+          .maybeSingle();
+
+        if (residentProfile?.full_name) {
+          setClientName(residentProfile.full_name);
+        }
       }
 
       console.log("Loaded profile:", profile);

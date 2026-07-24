@@ -111,7 +111,13 @@ export default function AdminShifts() {
   const loadShifts = async (orgId: string) => {
     const { data: shifts, error: shiftsError } = await supabase
       .from("shifts")
-      .select("*")
+      .select(
+        `
+        *,
+        patient:profiles!shifts_patient_id_fkey(full_name),
+        staff:profiles!shifts_staff_id_fkey(full_name)
+      `,
+      )
       .eq("organization_id", orgId)
       .order("shift_date", { ascending: false })
       .order("start_time", { ascending: false });
@@ -146,7 +152,13 @@ export default function AdminShifts() {
   const loadArchivedShifts = async (orgId: string) => {
     const { data: archived, error: archivedError } = await supabase
       .from("archived_shifts")
-      .select("*")
+      .select(
+        `
+        *,
+        patient:profiles!shifts_patient_id_fkey(full_name),
+        staff:profiles!shifts_staff_id_fkey(full_name)
+      `,
+      )
       .eq("organization_id", orgId)
       .order("archived_at", { ascending: false });
 
@@ -372,13 +384,14 @@ export default function AdminShifts() {
                                   <span className="text-gray-600 dark:text-gray-400">
                                     Staff:
                                   </span>{" "}
-                                  {shift.staff_name}
+                                  {shift.staff?.full_name || shift.staff_name}
                                 </p>
                                 <p className="text-emerald-300 text-sm">
                                   <span className="text-gray-600 dark:text-gray-400">
                                     Resident:
                                   </span>{" "}
-                                  {shift.patient_name}
+                                  {shift.patient?.full_name ||
+                                    shift.patient_name}
                                 </p>
                               </div>
                             </div>
@@ -476,7 +489,9 @@ export default function AdminShifts() {
                                 {formattedDate}
                               </h3>
                               <p className="text-gray-600 dark:text-gray-500 text-sm mt-1">
-                                {shift.staff_name} &middot; {shift.patient_name}
+                                {shift.staff?.full_name || shift.staff_name}{" "}
+                                &middot;{" "}
+                                {shift.patient?.full_name || shift.patient_name}
                               </p>
                               <p className="text-gray-500 dark:text-gray-600 text-xs mt-2 flex items-center gap-1">
                                 <Clock3 size={12} />

@@ -56,7 +56,8 @@ const preferenceInitial: StaffPreferences = {
 const inputClass =
   "w-full rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0b1018] px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-sky-400";
 
-const labelClass = "mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300";
+const labelClass =
+  "mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300";
 
 export default function StaffSettings() {
   const [staffName, setStaffName] = useState("Staff");
@@ -129,7 +130,9 @@ export default function StaffSettings() {
     setProfile(nextProfile);
 
     const savedPreferences = localStorage.getItem(
-      nextProfile.email ? `staff-settings:${nextProfile.email}` : "staff-settings",
+      nextProfile.email
+        ? `staff-settings:${nextProfile.email}`
+        : "staff-settings",
     );
 
     if (savedPreferences) {
@@ -252,7 +255,9 @@ export default function StaffSettings() {
                     <input
                       className={inputClass}
                       value={profile.fullName}
-                      onChange={(e) => updateProfile("fullName", e.target.value)}
+                      onChange={(e) =>
+                        updateProfile("fullName", e.target.value)
+                      }
                     />
                   </Field>
                   <Field label="Email" icon={<Mail size={16} />}>
@@ -287,7 +292,9 @@ export default function StaffSettings() {
                       <textarea
                         className={`${inputClass} min-h-[96px] resize-y`}
                         value={profile.address}
-                        onChange={(e) => updateProfile("address", e.target.value)}
+                        onChange={(e) =>
+                          updateProfile("address", e.target.value)
+                        }
                       />
                     </Field>
                   </div>
@@ -310,7 +317,10 @@ export default function StaffSettings() {
                       }
                     />
                   </Field>
-                  <Field label="Emergency Contact Phone" icon={<Phone size={16} />}>
+                  <Field
+                    label="Emergency Contact Phone"
+                    icon={<Phone size={16} />}
+                  >
                     <input
                       className={inputClass}
                       value={profile.emergencyContactPhone}
@@ -341,19 +351,25 @@ export default function StaffSettings() {
                     title="Shift Reminders"
                     description="Keep reminders enabled for upcoming assigned shifts."
                     checked={preferences.shiftReminders}
-                    onChange={(value) => updatePreference("shiftReminders", value)}
+                    onChange={(value) =>
+                      updatePreference("shiftReminders", value)
+                    }
                   />
                   <Toggle
                     title="Check-in Alerts"
                     description="Show alerts for due and overdue care check-ins."
                     checked={preferences.checkinAlerts}
-                    onChange={(value) => updatePreference("checkinAlerts", value)}
+                    onChange={(value) =>
+                      updatePreference("checkinAlerts", value)
+                    }
                   />
                   <Toggle
                     title="Incident Alerts"
                     description="Keep incident-related dashboard prompts visible."
                     checked={preferences.incidentAlerts}
-                    onChange={(value) => updatePreference("incidentAlerts", value)}
+                    onChange={(value) =>
+                      updatePreference("incidentAlerts", value)
+                    }
                   />
                 </div>
               </section>
@@ -375,7 +391,9 @@ export default function StaffSettings() {
                     title="High Contrast"
                     description="Prefer stronger contrast for text and controls."
                     checked={preferences.highContrast}
-                    onChange={(value) => updatePreference("highContrast", value)}
+                    onChange={(value) =>
+                      updatePreference("highContrast", value)
+                    }
                   />
                 </div>
               </section>

@@ -20,6 +20,9 @@ interface Shift {
   start_time: string;
   end_time: string;
   patient_name: string;
+  patient?: {
+    full_name: string;
+  };
 }
 
 interface Incident {
@@ -34,6 +37,12 @@ interface Incident {
   patient_id: string;
   incident_description: string;
   created_at: string;
+  resident?: {
+    full_name: string;
+  };
+  staff?: {
+    full_name: string;
+  };
 }
 
 const CARD_STYLE =
@@ -83,7 +92,12 @@ const StaffIncident: React.FC = () => {
       // Query for active shift
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
-        .select("*")
+        .select(
+          `
+          *,
+          patient:profiles!shifts_patient_id_fkey(full_name)
+        `,
+        )
         .eq("staff_id", session.user.id)
         .eq("shift_date", today)
         .eq("status", "active")
@@ -110,7 +124,13 @@ const StaffIncident: React.FC = () => {
       // Only for assigned patient and organization
       const { data: incidentData, error: incidentError } = await supabase
         .from("incidents")
-        .select("*")
+        .select(
+          `
+          *,
+          resident:profiles!incidents_patient_id_fkey(full_name),
+          staff:profiles!incidents_staff_id_fkey(full_name)
+        `,
+        )
         .eq("patient_id", activeShift.patient_id)
         .eq("organization_id", activeShift.organization_id)
         .order("created_at", { ascending: false });
@@ -217,7 +237,7 @@ const StaffIncident: React.FC = () => {
                     Assigned Resident
                   </div>
                   <div className={CARD_TITLE_STYLE}>
-                    {activeShift.patient_name}
+                    {activeShift.patient?.full_name || activeShift.patient_name}
                   </div>
                 </div>
 
@@ -289,13 +309,14 @@ const StaffIncident: React.FC = () => {
                         <span>
                           Reported by:{" "}
                           <span className="font-medium">
-                            {incident.staff_name}
+                            {incident.staff?.full_name || incident.staff_name}
                           </span>
                         </span>
                         <span>
                           Resident:{" "}
                           <span className="font-medium">
-                            {incident.resident_name}
+                            {incident.resident?.full_name ||
+                              incident.resident_name}
                           </span>
                         </span>
                         <span>

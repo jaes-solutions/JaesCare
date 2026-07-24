@@ -22,6 +22,8 @@ type IncidentRecord = {
   incident_description: string;
   outcome: string;
   created_at: string;
+  resident?: { full_name: string } | null;
+  staff?: { full_name: string } | null;
 };
 
 const AdminIncidents: React.FC = () => {
@@ -92,7 +94,13 @@ const AdminIncidents: React.FC = () => {
 
       const { data, error } = await supabase
         .from("incidents")
-        .select("*")
+        .select(
+          `
+  *,
+  resident:profiles!incidents_patient_id_fkey(full_name),
+  staff:profiles!incidents_staff_id_fkey(full_name)
+`,
+        )
         .eq("organization_id", profile.organization_id)
         .order("created_at", { ascending: false });
 
@@ -121,8 +129,16 @@ const AdminIncidents: React.FC = () => {
     const term = searchTerm.toLowerCase();
     return incidents.filter(
       (incident) =>
-        incident.resident_name?.toLowerCase().includes(term) ||
-        incident.staff_name?.toLowerCase().includes(term) ||
+        (
+          incident.resident?.full_name?.toLowerCase() ||
+          incident.resident_name?.toLowerCase() ||
+          ""
+        ).includes(term) ||
+        (
+          incident.staff?.full_name?.toLowerCase() ||
+          incident.staff_name?.toLowerCase() ||
+          ""
+        ).includes(term) ||
         incident.category?.toLowerCase().includes(term) ||
         incident.subcategory?.toLowerCase().includes(term),
     );
@@ -154,8 +170,8 @@ const AdminIncidents: React.FC = () => {
         <div class="header">
           <h1>Incident Report #${incident.id}</h1>
         </div>
-        <div class="section"><span class="label">Resident Name:</span> ${incident.resident_name}</div>
-        <div class="section"><span class="label">Staff Name:</span> ${incident.staff_name}</div>
+        <div class="section"><span class="label">Resident Name:</span> ${incident.resident?.full_name || incident.resident_name}</div>
+        <div class="section"><span class="label">Staff Name:</span> ${incident.staff?.full_name || incident.staff_name}</div>
         <div class="section"><span class="label">Category:</span> ${incident.category}</div>
         <div class="section"><span class="label">Subcategory:</span> ${incident.subcategory}</div>
         <div class="section"><span class="label">Outcome:</span> ${incident.outcome}</div>
@@ -314,10 +330,11 @@ const AdminIncidents: React.FC = () => {
                         className="hover:bg-slate-100 dark:hover:bg-[#11161d] transition-colors"
                       >
                         <td className="py-3 px-2 font-medium text-slate-900 dark:text-white transition-colors">
-                          {incident.resident_name}
+                          {incident.resident?.full_name ||
+                            incident.resident_name}
                         </td>
                         <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
-                          {incident.staff_name}
+                          {incident.staff?.full_name || incident.staff_name}
                         </td>
                         <td className="py-3 px-2 text-slate-900 dark:text-white transition-colors">
                           {incident.category}
@@ -372,7 +389,8 @@ const AdminIncidents: React.FC = () => {
                       Resident Name:
                     </span>
                     <div className="text-slate-900 dark:text-white font-semibold transition-colors">
-                      {selectedIncident.resident_name}
+                      {selectedIncident.resident?.full_name ||
+                        selectedIncident.resident_name}
                     </div>
                   </div>
                   <div>
@@ -380,7 +398,8 @@ const AdminIncidents: React.FC = () => {
                       Staff Name:
                     </span>
                     <div className="text-slate-900 dark:text-white font-semibold transition-colors">
-                      {selectedIncident.staff_name}
+                      {selectedIncident.staff?.full_name ||
+                        selectedIncident.staff_name}
                     </div>
                   </div>
                   <div>

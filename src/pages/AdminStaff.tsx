@@ -333,7 +333,12 @@ export default function AdminStaff() {
   const loadStaffShifts = async (staffId: string, organizationId: string) => {
     const { data, error } = await supabase
       .from("shifts")
-      .select("*")
+      .select(
+        `
+        *,
+        patient:profiles!shifts_patient_id_fkey(full_name)
+      `,
+      )
       .eq("staff_id", staffId)
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false });
@@ -349,7 +354,12 @@ export default function AdminStaff() {
   const loadStaffCheckins = async (staffId: string, organizationId: string) => {
     const { data, error } = await supabase
       .from("checkins")
-      .select("*")
+      .select(
+        `
+        *,
+        patient:profiles!checkins_patient_id_fkey(full_name)
+      `,
+      )
       .eq("staff_id", staffId)
       .eq("organization_id", organizationId)
       .order("submitted_at", { ascending: false });
@@ -368,7 +378,12 @@ export default function AdminStaff() {
   ) => {
     const { data, error } = await supabase
       .from("handovers")
-      .select("*")
+      .select(
+        `
+        *,
+        patient:profiles!handovers_patient_id_fkey(full_name)
+      `,
+      )
       .eq("staff_id", staffId)
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false });
@@ -725,7 +740,7 @@ export default function AdminStaff() {
       `${DATE_FILTER_LABEL[filterShifts]} · ${filteredShifts.length} shift(s) · ${filteredTotalHoursWorked.toFixed(1)} hrs worked (completed)`,
       ["Resident", "Date", "Start", "End", "Status"],
       filteredShifts.map((s) => [
-        s.patient_name || "—",
+        s.patient?.full_name || s.patient_name || "—",
         s.shift_date || "—",
         s.start_time || "—",
         s.end_time || "—",
@@ -737,17 +752,19 @@ export default function AdminStaff() {
 
   const exportShiftPdf = (shift: any) => {
     const name = selectedStaff?.full_name || "Staff";
+    const residentName =
+      shift.patient?.full_name || shift.patient_name || "Resident";
     downloadRecordPdf(
-      `Shift — ${shift.patient_name || "Resident"}`,
+      `Shift — ${residentName}`,
       [
         { label: "Staff", value: name },
-        { label: "Resident", value: shift.patient_name },
+        { label: "Resident", value: residentName },
         { label: "Date", value: shift.shift_date },
         { label: "Start", value: shift.start_time },
         { label: "End", value: shift.end_time },
         { label: "Status", value: shift.status },
       ],
-      `shift-${slugify(shift.patient_name || "resident")}-${shift.shift_date || shift.id}.pdf`,
+      `shift-${slugify(residentName)}-${shift.shift_date || shift.id}.pdf`,
     );
   };
 
@@ -780,7 +797,7 @@ export default function AdminStaff() {
         "Safeguarding",
       ],
       filteredCheckins.map((c) => [
-        c.patient_name || "—",
+        c.patient?.full_name || c.patient_name || "—",
         formatUKTime(c.submitted_at),
         c.status || "—",
         formatValue(c.wellbeing),
@@ -800,12 +817,14 @@ export default function AdminStaff() {
 
   const exportCheckinPdf = (checkin: any) => {
     const name = selectedStaff?.full_name || "Staff";
+    const residentName =
+      checkin.patient?.full_name || checkin.patient_name || "Resident";
 
     downloadRecordPdf(
-      `Check-in — ${checkin.patient_name || "Resident"}`,
+      `Check-in — ${residentName}`,
       [
         { label: "Staff", value: name },
-        { label: "Resident", value: checkin.patient_name },
+        { label: "Resident", value: residentName },
         { label: "Completed", value: formatUKTime(checkin.submitted_at) },
         {
           label: "Scheduled Time",
@@ -843,7 +862,7 @@ export default function AdminStaff() {
         { label: "Safeguarding", value: formatValue(checkin.safeguarding) },
         { label: "Safeguarding Notes", value: checkin.safeguarding_notes },
       ],
-      `checkin-${slugify(checkin.patient_name || "resident")}-${checkin.id}.pdf`,
+      `checkin-${slugify(residentName)}-${checkin.id}.pdf`,
     );
   };
   const exportHandoversPdf = () => {
@@ -853,7 +872,7 @@ export default function AdminStaff() {
       `${DATE_FILTER_LABEL[filterHandovers]} · ${filteredHandovers.length} handover(s)`,
       ["Resident", "Submitted", "Wellbeing", "Concerns / Incidents"],
       filteredHandovers.map((h) => [
-        h.patient_name || "—",
+        h.patient?.full_name || h.patient_name || "—",
         formatUKTime(h.created_at) || "—",
         h.wellbeing_summary || "—",
         h.concerns_incidents || "—",
@@ -864,11 +883,13 @@ export default function AdminStaff() {
 
   const exportHandoverPdf = (handover: any) => {
     const name = selectedStaff?.full_name || "Staff";
+    const residentName =
+      handover.patient?.full_name || handover.patient_name || "Resident";
     downloadRecordPdf(
-      `Handover — ${handover.patient_name || "Resident"}`,
+      `Handover — ${residentName}`,
       [
         { label: "Staff", value: name },
-        { label: "Resident", value: handover.patient_name },
+        { label: "Resident", value: residentName },
         { label: "Submitted", value: formatUKTime(handover.created_at) },
         { label: "Wellbeing", value: handover.wellbeing_summary },
         { label: "Care Summary", value: handover.care_summary },
@@ -877,7 +898,7 @@ export default function AdminStaff() {
         { label: "Family Communication", value: handover.family_communication },
         { label: "Recommendations", value: handover.recommendations },
       ],
-      `handover-${slugify(handover.patient_name || "resident")}-${handover.id}.pdf`,
+      `handover-${slugify(residentName)}-${handover.id}.pdf`,
     );
   };
 
@@ -1181,7 +1202,9 @@ export default function AdminStaff() {
                               <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
                                   <p className="font-semibold text-black dark:text-white">
-                                    {shift.patient_name || "Resident"}
+                                    {shift.patient?.full_name ||
+                                      shift.patient_name ||
+                                      "Resident"}
                                   </p>
                                   <p className="text-sm text-gray-500">
                                     {shift.shift_date || "No date"}
@@ -1218,7 +1241,10 @@ export default function AdminStaff() {
                               <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <InfoCard
                                   title="Resident"
-                                  value={shift.patient_name}
+                                  value={
+                                    shift.patient?.full_name ||
+                                    shift.patient_name
+                                  }
                                 />
                                 <InfoCard
                                   title="Date"
@@ -1309,7 +1335,9 @@ export default function AdminStaff() {
                               <summary className="cursor-pointer list-none px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
                                   <p className="font-semibold text-black dark:text-white">
-                                    {checkin.patient_name || "Resident"}
+                                    {checkin.patient?.full_name ||
+                                      checkin.patient_name ||
+                                      "Resident"}
                                   </p>
                                   <p className="text-sm text-gray-500">
                                     {formatUKTime(checkin.submitted_at)}
@@ -1346,7 +1374,10 @@ export default function AdminStaff() {
                               <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 <InfoCard
                                   title="Resident"
-                                  value={checkin.patient_name}
+                                  value={
+                                    checkin.patient?.full_name ||
+                                    checkin.patient_name
+                                  }
                                 />
                                 <InfoCard
                                   title="Completed"
@@ -1587,7 +1618,9 @@ export default function AdminStaff() {
                               <summary className="cursor-pointer list-none px-5 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-sky-50 dark:hover:bg-sky-500/5 transition-colors">
                                 <div>
                                   <p className="font-semibold text-black dark:text-white">
-                                    {handover.patient_name || "Resident"}
+                                    {handover.patient?.full_name ||
+                                      handover.patient_name ||
+                                      "Resident"}
                                   </p>
                                   <p className="text-sm text-gray-500">
                                     {formatUKTime(handover.created_at)}
@@ -1624,7 +1657,10 @@ export default function AdminStaff() {
                               <div className="border-t border-black/10 dark:border-white/[0.1] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <InfoCard
                                   title="Resident"
-                                  value={handover.patient_name}
+                                  value={
+                                    handover.patient?.full_name ||
+                                    handover.patient_name
+                                  }
                                 />
                                 <InfoCard
                                   title="Submitted"

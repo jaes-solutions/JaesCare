@@ -257,7 +257,13 @@ export default function StaffDashboard() {
 
       const { data: shiftData, error: shiftError } = await supabase
         .from("shifts")
-        .select("*, organization_id")
+        .select(
+          `
+          *,
+          organization_id,
+          patient:profiles!shifts_patient_id_fkey(full_name)
+        `,
+        )
         .eq("staff_id", session.user.id)
         .order("shift_date", { ascending: true });
 
@@ -814,7 +820,9 @@ export default function StaffDashboard() {
                   </p>
 
                   <h2 className="text-[24px] font-semibold text-black dark:text-white leading-tight mb-2">
-                    {assignedPatient?.patient_name || "No Resident Assigned"}
+                    {assignedPatient?.patient?.full_name ||
+                      assignedPatient?.patient_name ||
+                      "No Resident Assigned"}
                   </h2>
 
                   <p className="text-gray-600 dark:text-[#9ca8b5] text-[13px]">
@@ -929,7 +937,8 @@ export default function StaffDashboard() {
                       </h3>
 
                       <p className="text-gray-600 dark:text-[#9ca8b5] text-[14px]">
-                        Resident: {shift.patient_name}
+                        Resident:{" "}
+                        {shift.patient?.full_name || shift.patient_name}
                       </p>
                     </div>
 
