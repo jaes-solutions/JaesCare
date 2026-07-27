@@ -150,13 +150,18 @@ export default function AdminShifts() {
   };
 
   const loadArchivedShifts = async (orgId: string) => {
+    // NOTE: archived_shifts has its OWN foreign key constraints, distinct
+    // from the ones on shifts. Using the shifts_* fkey names here caused
+    // PGRST200 ("Could not find a relationship between 'archived_shifts'
+    // and 'profiles'") because those constraint names don't exist on
+    // archived_shifts.
     const { data: archived, error: archivedError } = await supabase
       .from("archived_shifts")
       .select(
         `
         *,
-        patient:profiles!shifts_patient_id_fkey(full_name),
-        staff:profiles!shifts_staff_id_fkey(full_name)
+        patient:profiles!archived_shifts_patient_id_fkey(full_name),
+        staff:profiles!archived_shifts_staff_id_fkey(full_name)
       `,
       )
       .eq("organization_id", orgId)
@@ -207,7 +212,12 @@ export default function AdminShifts() {
     setPending(shift.id, true);
 
     try {
-      const { id, ...shiftData } = shift;
+      // `shift` comes from shiftList, which includes the joined `patient`
+      // and `staff` relation objects from the select() in loadShifts.
+      // Those are NOT real columns on archived_shifts, so they must be
+      // stripped out before inserting or PostgREST throws PGRST204
+      // ("Could not find the 'patient' column of 'archived_shifts'").
+      const { id, patient, staff, ...shiftData } = shift;
 
       const { error: archiveError } = await supabase
         .from("archived_shifts")
@@ -257,8 +267,17 @@ export default function AdminShifts() {
     setPending(archivedShift.id, true);
 
     try {
-      const { id, original_shift_id, archived_at, ...shiftData } =
-        archivedShift;
+      // Same issue as handleDeleteShift: archivedShift carries the joined
+      // `patient` / `staff` relation objects from loadArchivedShifts, which
+      // must be stripped before inserting back into `shifts`.
+      const {
+        id,
+        original_shift_id,
+        archived_at,
+        patient,
+        staff,
+        ...shiftData
+      } = archivedShift;
 
       const { error: restoreError } = await supabase.from("shifts").insert({
         ...shiftData,
