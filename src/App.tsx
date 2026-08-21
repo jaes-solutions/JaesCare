@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -20,11 +20,9 @@ import StaffIncidentReporting from "./pages/StaffIncidentReporting";
 import AdminShifts from "./pages/AdminShifts";
 import AdminInvoicesHome from "./pages/AdminInvoicesHome";
 import AdminInvoices from "./pages/Invoicing";
+import AdminSettings from "./pages/AdminSettings";
+import StaffSettings from "./pages/StaffSettings";
 function App() {
-  const [darkMode, setDarkMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
-  );
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -33,28 +31,6 @@ function App() {
       offset: 80,
     });
   }, []);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setDarkMode(e.matches);
-    };
-
-    media.addEventListener("change", handleChange);
-
-    return () => media.removeEventListener("change", handleChange);
-  }, []);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      document.documentElement.style.backgroundColor = "#03060b";
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.style.backgroundColor = "#ffffff";
-    }
-  }, [darkMode]);
 
   return (
     <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white transition-colors duration-300">
@@ -157,6 +133,22 @@ function App() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminShifts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/adminSettings"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staffSettings"
+            element={
+              <ProtectedRoute requiredRole="staff">
+                <StaffSettings />
               </ProtectedRoute>
             }
           />

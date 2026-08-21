@@ -803,7 +803,7 @@ export default function AdminDashboard() {
                                 {formattedDate}
                               </h3>
                               <p className="text-gray-600 dark:text-gray-500 text-sm mt-1">
-                                Scheduled Care Shift
+                                Scheduled Care Shift 
                               </p>
                             </div>
                             <div className="text-left sm:text-right space-y-1">

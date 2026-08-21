@@ -1586,7 +1586,7 @@ export default function Home() {
                 })}
               </div>
             </section>
-          </main>
+          </main> 
 
           {/* Deep Architectural Structural Corporate Footer */}
           <footer className="border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#080b10] pt-20 pb-10 mt-auto relative overflow-hidden">
